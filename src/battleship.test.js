@@ -1,8 +1,8 @@
-import { Grid, Ship } from "./battleship.js";
+import { Grid, Ship, Player, Game, User } from "./battleship.js";
 
 describe('Grid',()=>{
-    test('Grid is constructed correctly',()=>{
-        const grid = new Grid(2,2);
+    test('Constructed adequately',()=>{
+        const grid = new Grid({x:2,y:2});
         expect(grid.squares[0][0].coords).toEqual([0,0]);
         expect(grid.squares[1][1].coords).toEqual([1,1]);
         expect(grid.squares[2]).toBeUndefined();
@@ -10,7 +10,7 @@ describe('Grid',()=>{
 });
 
 describe('Ship',()=>{
-    test('Ship is constructed adequately',()=>{
+    test('Constructed adequately',()=>{
         const length = 3;
         const ship = new Ship(length);
         expect(ship.head).toBeDefined();
@@ -18,7 +18,7 @@ describe('Ship',()=>{
         expect(ship.hits).toBe(0);
         expect(ship.isSunk).toBe(false);
     });
-    test('Properly constructs ship parts based on length',()=>{
+    test('Constructs ship parts based on length',()=>{
         const length = 3;
         const ship = new Ship(length);
         expect(ship.head).toBeDefined();
@@ -32,3 +32,22 @@ describe('Ship',()=>{
         expect(curIter.down).toBe(null);
     });
 });
+
+describe('Player',()=>{
+    test('Player is constructed correctly', ()=>{
+        const user = {
+            name: "Josh",
+            lastShipGrid: null
+        };
+        const player = new Player(user);
+        expect(player.name).toBe("Josh");
+        expect(player.user).toEqual(user);
+        expect(player.ships).toEqual([]);
+    });
+});
+
+
+describe('Game',()=>{
+    
+});
+
