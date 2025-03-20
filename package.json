@@ -46,6 +46,8 @@
 
     "@babel/runtime-corejs3": "^7.26.10",
 
+    "chance": "^1.1.12",
+
     "core-js": "^3.41.0",
 
     "uuid": "^11.0.5"
