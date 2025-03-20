@@ -1,4 +1,3 @@
-import {Ship} from "./battleship.js";
+import {Game, User} from "./battleship.js";
 
-const ship = new Ship(3);
-ship.print();
+const game = new Game([new User('Test')]);
