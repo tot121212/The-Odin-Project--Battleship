@@ -5,31 +5,43 @@ export class Vector2 {
      * @param {number} y
      */
     constructor(x, y) {
+      if (!x || !(typeof x === 'number')) throw new Error("x is not a number");
+      if (!y || !(typeof y === 'number')) throw new Error("y is not a number")
       this.x = x;
       this.y = y;
     }
 
     /**
      * Returns new Vector2 as a result of adding "this" and "other" together
-     * @param {Vector2} other 
-     * @returns {Vector2}
+     * @param {Vector2} vec 
+     * @returns {Vector2|null}
      */
-    add(other) {
-        return new Vector2(this.x + other.x, this.y + other.y);
+    add(vec) {
+        if (!vec || (!(vec instanceof Vector2))) return null;
+        else return new Vector2(this.x + vec.x, this.y + vec.y);
+    }
+    /**
+     * 
+     * @returns {Array<number,number>}
+     */
+    toArray(){
+      return [this.x, this.y];
     }
     /**
      * Rotates vector 90 degrees counter clockwise
      * @param {Vector2} vec
+     * @returns {Vector2|null}
      */
     rotateCounterClock90Deg(vec){
-      return new Vector2(-vec.y, vec.x);
+      if (!vec || !(vec instanceof Vector2)) return null;
+      else return new Vector2(-vec.y, vec.x);
     }
     /**
      * Rotates vector 90 degrees clockwise
      * @param {Vector2} vec
      */
     rotateClock90Deg(vec) {
+      if (!vec || !(vec instanceof Vector2)) return null;
       return new Vector2(vec.y, -vec.x);
     }
-    
 }
