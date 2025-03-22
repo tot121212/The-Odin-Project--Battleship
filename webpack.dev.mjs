@@ -4,7 +4,7 @@ import common from './webpack.common.mjs';
 // @ts-ignore
 export default merge(common, {
   mode: 'development',
-  devtool: 'source-map',
+  devtool: 'eval-source-map',
   devServer: {
     static: './dist',
     open: true,
