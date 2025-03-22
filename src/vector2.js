@@ -17,4 +17,19 @@ export class Vector2 {
     add(other) {
         return new Vector2(this.x + other.x, this.y + other.y);
     }
+    /**
+     * Rotates vector 90 degrees counter clockwise
+     * @param {Vector2} vec
+     */
+    rotateCounterClock90Deg(vec){
+      return new Vector2(-vec.y, vec.x);
+    }
+    /**
+     * Rotates vector 90 degrees clockwise
+     * @param {Vector2} vec
+     */
+    rotateClock90Deg(vec) {
+      return new Vector2(vec.y, -vec.x);
+    }
+    
 }
