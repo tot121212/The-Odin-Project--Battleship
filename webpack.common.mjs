@@ -7,14 +7,14 @@ export default {
   },
 
   output: {
-    filename: 'main.js',
+    filename: '[name].bundle.js',
     path: path.resolve(path.dirname('./src'), 'dist'),
     clean: true,
   },
 
   plugins: [
     new HtmlWebpackPlugin({
-      template: './src/template.html',
+      template: './src/index.html',
     }),
   ],
 
@@ -32,6 +32,16 @@ export default {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
         type: 'asset/resource',
       },
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env'],
+          },
+        },
+      },
     ],
-  },
+  }
 };
