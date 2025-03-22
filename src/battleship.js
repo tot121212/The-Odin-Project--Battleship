@@ -1,4 +1,4 @@
-import { HtmlHandler } from "./htmlHandler.js";
+import { DOM } from "./DOM.js";
 import { LinkedListQueue } from "./llq.js";
 
 import { Chance } from "chance";
