@@ -5,8 +5,8 @@ export class Vector2 {
      * @param {number} y
      */
     constructor(x, y) {
-      if (!x || !(typeof x === 'number')) throw new Error("x is not a number");
-      if (!y || !(typeof y === 'number')) throw new Error("y is not a number")
+      if (!(typeof x === 'number')) throw new Error("x is not a number");
+      if (!(typeof y === 'number')) throw new Error("y is not a number");
       this.x = x;
       this.y = y;
     }
