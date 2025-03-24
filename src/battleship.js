@@ -141,15 +141,15 @@ export class Grid{
      */
     constructor(gridSize){
         this.size = gridSize;
-        this.grid = this.newGrid(this.size);
+        this.grid = Grid.newGrid(this.size);
     }
 
     /**
      * 
      * @param {number} size
-     * @returns {Array.<Array.<Square>>}
+     * @returns {Square[][]}
      */
-    newGrid(size){
+    static newGrid(size){
         const grid = [];
         for (let i = 0; i < size; i++){
             const row = [];
