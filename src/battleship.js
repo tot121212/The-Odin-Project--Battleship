@@ -27,11 +27,12 @@ export class ShipPart{
 // ship thats part of a fleet
 export class Ship{
     constructor(){
-        // instead of a linked list, lets just store one node as the head, store the parts in an array, and store a map of the coordinates to each part
         this.length = 0;
         this.parts = new Set();
         this.damagedParts = new Set();
-        this.face = new Vector2(0, 1); // facing up by default
+        this.baseFace = new Vector2(1, 0); // starts pointing right
+        this.face = new Vector2(1, 0); // want to be seperate vectors in memory
+        this.partLocalPosMap = new Map(); // map of ship part to its local coordinate in layout of ship
     }
 
     reset(){
@@ -45,7 +46,11 @@ export class Ship{
     createParts(length){
         this.parts = new Set();
         for (let i = 0; i < length; i++){
-            this.parts.add(new ShipPart(this));
+            const newPart = new ShipPart(this);
+            this.parts.add(newPart);
+            // if the vector were the key this wouldnt work because each vector is a unique obj 
+            // and not a primitive that is comparable like that
+            this.partLocalPosMap.set(newPart, new Vector2(-i, 0));
         }
     }
 
