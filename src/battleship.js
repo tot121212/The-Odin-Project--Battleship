@@ -366,18 +366,21 @@ export class Game{
         }
         this.playerGridMap = new Map();
         this.players = this.createPlayers(users, bots);
+        console.log("Players created:",this.players);
         this.grids = this.createGrids(gridSize);
+        console.log("Grids created:",this.playerGridMap);
         this.randomizeShipLayouts();
-        // allow players to move ships around to where they want them to be
-        this.prepPhase();
-        this.gameLoop(0);
+        console.log("Randomized ship layouts...");
+        // // allow players to move ships around to where they want them to be
+        // this.prepPhase();
+        // this.gameLoop(0);
     }
 
     /**
      * 
-     * @param {Array.<User>} users 
-     * @param {Array.<Bot>} bots 
-     * @returns 
+     * @param {User[]} users 
+     * @param {Bot[]} bots 
+     * @returns {Player[]}
      */
     createPlayers(users, bots){
         return users.concat(bots).map((user) => new Player(user));
@@ -386,7 +389,7 @@ export class Game{
     /**
      * 
      * @param {number} gridSize 
-     * @returns 
+     * @returns {Grid[]}
      */
     createGrids(gridSize){
         return this.players.map((player)=> {
@@ -397,10 +400,11 @@ export class Game{
     }
 
     /**
-     * 
+     * Place ship, from pos, towards the opposite direction of the ship.face vector, by the ship.length, ensuring that the grid at those positions is valid
      * @param {Ship} ship
      * @param {Grid} grid
      * @param {Vector2} pos
+     * @returns {boolean}
      */
     placeShip(ship, grid, pos){
         // use ship face
