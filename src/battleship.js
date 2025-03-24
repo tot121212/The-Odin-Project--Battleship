@@ -167,6 +167,10 @@ export class Grid{
         console.log("\n");
     }
 
+    /**
+     * 
+     * @returns {Square[][]}
+     */
     get(){
         return this.grid;
     }
