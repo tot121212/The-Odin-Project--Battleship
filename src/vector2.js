@@ -21,7 +21,7 @@ export class Vector2 {
         else return new Vector2(this.x + vec.x, this.y + vec.y);
     }
     /**
-     * 
+     * converts vector to an array with two elements, x and y
      * @returns {Array<number,number>}
      */
     toArray(){
