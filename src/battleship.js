@@ -354,7 +354,7 @@ export class Player{ // player is only used when a game starts so it doesnt inhe
 export class Game{
     /**
      * 
-     * @param {Array.<User>} users 
+     * @param {User[]} users 
      * @param {number} amtOfBots 
      * @param {number} gridSize 
      */
