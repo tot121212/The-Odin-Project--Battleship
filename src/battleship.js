@@ -121,8 +121,14 @@ export class Square{
      * @param {Vector2} pos 
      */
     constructor(pos){
+        /**
+         * @type {Vector2}
+         */
         this.pos = pos;
         this.wasShot = false;
+        /**
+         * @type {Set<ShipPart>}
+         */
         this.shipParts = new Set(); // we can call methods on the parts parent, so very nice
     }
 }
