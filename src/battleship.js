@@ -176,19 +176,20 @@ export class Grid{
     }
 
     /**
-     * @param {Vector2} vec - Two element array containing x and y
+     * @param {Vector2} globalPos - Two element array containing x and y
      * @returns {Square|null} Square on grid
      */
-    getSquare(vec) {
-        if (!(vec instanceof Vector2)) return null;
-        if (
-            vec.x >= 0 &&
-            vec.x < this.grid.length &&
-            vec.y >= 0 &&
-            vec.y < this.grid[vec.x].length
+    getSquare(globalPos) {
+        if (globalPos &&
+            globalPos instanceof Vector2 &&
+            this.grid &&
+            globalPos.x >= 0 && 
+            globalPos.x < this.grid.length &&
+            globalPos.y >= 0 && 
+            globalPos.y < this.grid[globalPos.x].length
         ){
-            return this.grid[vec.x][vec.y];
-        } 
+            return this.grid[globalPos.x][globalPos.y];
+        }
         return null;
     }
 
