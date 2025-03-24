@@ -1,6 +1,13 @@
 class Node {
+    /**
+     * 
+     * @param {any} value 
+     */
     constructor(value) {
         this.value = value;
+        /**
+         * @type {Node|null}
+         */
         this.next = null;
     }
 }
@@ -12,6 +19,10 @@ export class LinkedListQueue {
         this.length = 0;
     }
 
+    /**
+     * 
+     * @param  {...any} values 
+     */
     enqueue(...values) {
         for (const value of values) {
             const newNode = new Node(value);
@@ -26,7 +37,7 @@ export class LinkedListQueue {
     }
 
     dequeue() {
-        if (!this.head) return undefined;
+        if (!this.head) return null;
         const value = this.head.value;
         this.head = this.head.next;
         if (!this.head) this.tail = null;
@@ -35,7 +46,7 @@ export class LinkedListQueue {
     }
 
     peek() {
-        return this.head ? this.head.value : undefined;
+        return this.head ? this.head.value : null;
     }
 
     isEmpty() {
