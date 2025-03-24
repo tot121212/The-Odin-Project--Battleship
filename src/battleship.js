@@ -131,6 +131,31 @@ export class Square{
          */
         this.shipParts = new Set(); // we can call methods on the parts parent, so very nice
     }
+
+    /**
+     * 
+     * @param {ShipPart} part
+     */
+    addShipPart(part){
+        this.shipParts.add(part);
+    }
+
+    /**
+     * 
+     * @param {ShipPart} part
+     */
+    removeShipPart(part){
+        this.shipParts.delete(part);
+    }
+
+    attackShipParts(){
+        if (this.wasShot === true) return false;
+        this.wasShot = true;
+        for (const part of this.shipParts){
+            part.hit();
+        }
+        return true;
+    }
 }
 
 
@@ -244,20 +269,53 @@ export class Grid{
 
     /**
      * 
-     * @param {ShipPart} part 
-     * @param {Square} square 
+     * @param {Vector2} pos 
+     * @returns {boolean}
      */
-    addShipPart(part, square){
-        square.shipParts.add(part);
+    attackPos(pos){
+        const square = this.getSquare(pos);
+        if (square) return square.attackShipParts();
+        return false;
+    }
+
+    /**
+     * Search for a square until we find one that isn't already hit, for maxIter amt of times
+     * @param {Vector2} pos
+     * @param {number} maxIter
+     * @returns {Vector2|null}
+     */
+    attackPosRecurse(pos, maxIter = 3){
+        if (!(pos instanceof Vector2) || typeof maxIter !== 'number') return null;
+        if (maxIter < 0) return null;
+
+        const queue = new LinkedListQueue();
+        if (!(queue instanceof LinkedListQueue)) return null;
+        
+        let curIter = 0;
+        let prevChecks = new Set();
+        queue.enqueue(pos, null);
+        while (queue.length > 0 && curIter < maxIter){
+            const curPos = queue.dequeue();
+            if (curPos === null) {curIter += 1; continue;}
+
+            if (prevChecks.has(curPos)) continue;
+            else prevChecks.add(curPos);
+
+            if (!this.attackPos(curPos)) queue.enqueue(this.getAdjacentPositions(curPos));
+            return curPos;
+        }
+        return null;
     }
 
     /**
      * 
-     * @param {ShipPart} part 
-     * @param {Square} square 
+     * @returns {boolean}
      */
-    removeShipPart(part, square){
-        square.shipParts.delete(part);
+    attackRandomly(){
+        const lastIdx = this.size-1;
+        const pos = new Vector2(chance.integer({min: 0, max: lastIdx}), chance.integer({min: 0, max: lastIdx}));
+        if (!this.attackPosRecurse(pos)) return false; // square was not shot
+        return true; // square was shot
     }
 }
 
@@ -290,62 +348,6 @@ export class Player{ // player is only used when a game starts so it doesnt inhe
         this.parent = parent;
         this.name = parent.name;
         this.fleet = new Fleet(); // stores roots of ships
-    }
-
-    /**
-     * 
-     * @param {Square} square 
-     * @returns 
-     */
-    attackSquare(square){
-        if (!square || square.wasShot === true) return false;
-        square.wasShot = true;
-        square.shipParts.forEach(
-            /**
-            * @param {ShipPart} shipPart
-            */
-            (shipPart)=>{
-                shipPart.hit();
-            }
-        );
-        return true;
-    }
-
-    /**
-     * @description Tree traversal to attack square or its adjacents, up to maxIter iterations
-     * @param {Square} square
-     * @param {Grid} grid
-     * @param {number} maxIter
-     */
-    attackAdjacentSquare(square, grid, maxIter = 3){
-        if (!square) return false;
-        const queue = new LinkedListQueue();
-        let queueIterations = 0;
-        queue.enqueue(square, null);
-        while (queue.length > 0 && queueIterations < maxIter){
-            const curSquare = queue.dequeue();
-            if (curSquare === null) {
-                queueIterations += 1;
-                continue;
-            }
-            if (!this.attackSquare(curSquare)) queue.enqueue(grid.getAdjacencies(square));
-            else return true;
-        }
-        return false;
-    }
-    
-    /**
-     * 
-     * @param {Grid} grid 
-     */
-    attackRandomly(grid){
-        if (!grid) throw new Error("Grid doesn't exist");
-        const lastIdx = grid.size-1;
-        const pos = new Vector2(chance.integer({min: 0, max: lastIdx}), chance.integer({min: 0, max: lastIdx}));
-        let square = grid.getSquare(pos);
-        if (!square) throw new Error(`"Square does not exist at:", ${pos.x}, ${pos.y}`); // square doesnt exist
-        if (!this.attackAdjacentSquare(square, grid)) return false; // square was not shot
-        return true; // square was shot
     }
 }
 
