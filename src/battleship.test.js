@@ -1,48 +1,121 @@
-import { Grid, Ship, Player, Game, User } from "./battleship.js";
+import { AircraftCarrier, Grid, Player, User, Fleet, Destroyer, Bot, Square, ShipPart, Ship, Battleship } from "./battleship.js";
+import { Vector2 } from "./vector2.js";
+
+
+
+describe('Ships', ()=>{
+    let ship;
+    describe('Ship',()=>{
+        beforeEach(()=>{
+            ship = new Ship();
+            ship.length = 4;
+            ship.createParts(ship.length);
+        });
+        describe('ShipPart',()=>{
+            test('Ship is hit',()=>{
+                let part = ship.parts.values().next().value;
+                part.hit();
+                expect(ship.damagedParts.has(part)).toBe(true);
+            });
+        });
+        test('Ship sinks', ()=>{
+            for(const part of ship.parts.values()){
+                part.hit();
+            }
+            expect(ship.isSunk()).toBe(true);
+        });
+    });
+});
 
 describe('Grid',()=>{
-    test('Constructed adequately',()=>{
-        const grid = new Grid({x:2,y:2});
-        expect(grid.squares[0][0].coords).toEqual([0,0]);
-        expect(grid.squares[1][1].coords).toEqual([1,1]);
-        expect(grid.squares[2]).toBeUndefined();
+    let gridObj;
+    let gridSize = 0;
+    beforeEach(()=>{
+        gridObj = new Grid(gridSize);
+    })
+    gridSize = 10;
+    test('Grid is of correct bounds',()=>{
+        const squareA = gridObj.getSquare(new Vector2(0,0));
+        expect(squareA?.pos.x).toBe(0);
+        expect(squareA?.pos.y).toBe(0);
+
+        const squareB = gridObj.getSquare(new Vector2(4,5));
+        expect(squareB?.pos.x).toBe(4);
+        expect(squareB?.pos.y).toBe(5);
+
+        const squareC = gridObj.getSquare(new Vector2(9,9));
+        expect(squareC?.pos.x).toBe(9);
+        expect(squareC?.pos.y).toBe(9);
+
+        const squareD = gridObj.getSquare(new Vector2(gridSize, gridSize));
+        expect(squareD).toBe(null);
+
+        const squareE = gridObj.getSquare(new Vector2(gridSize+10, gridSize+10));
+        expect(squareE).toBe(null);
+    });
+
+    test('Adjacencies are of correct amount', ()=>{
+        /**
+         * @type {Vector2[]}
+         */
+        const adj1 = gridObj.getAdjacentPositions(new Vector2(0, 0));
+        expect(adj1.length).toBe(2);
+        const adj2 = gridObj.getAdjacentPositions(new Vector2(gridSize-1, gridSize-1));
+        expect(adj2.length).toBe(2);
+    });
+
+    describe('Ship with ShipParts on Grid',()=>{
+        /**
+         * @type {Ship}
+         */
+        let ship;
+        let shipPartPosArr = [];
+        beforeEach(()=>{
+            ship = new Battleship();
+            shipPartPosArr = [];
+            let x = 0;
+            let y = 0;
+            for (const part of ship.parts){
+                const pos = new Vector2(x, y);
+                const square = gridObj.getSquare(pos);
+                if (!square) continue;
+                square.addShipPart(part);
+                shipPartPosArr.push(pos);
+                y+=1;
+            }
+        });
+        test('Attack a coordinate and ship is damaged', ()=>{
+            const pos = shipPartPosArr[0];
+            gridObj.attackPos(pos);
+            const square = gridObj.getSquare(pos);
+            expect(square.wasShot).toBe(true);
+            const part = square.shipParts.values().next().value;
+            expect(ship.damagedParts.has(part));
+        });
+        test('Attack multiple coordinates and ship is sunk', ()=>{
+            for (const pos of shipPartPosArr){
+                gridObj.attackPos(pos);
+            }
+            const pos = shipPartPosArr[0];
+            const square = gridObj.getSquare(pos);
+            expect(square.wasShot).toBe(true);
+            const part = square.shipParts.values().next().value;
+            expect(ship.damagedParts.has(part));
+            expect(ship.isSunk()).toBe(true);
+        });
     });
 });
 
-describe('Ship',()=>{
-    test('Constructed adequately',()=>{
-        const length = 3;
-        const ship = new Ship(length);
-        expect(ship.head).toBeDefined();
-        expect(ship.length).toBe(length);
-        expect(ship.hits).toBe(0);
-        expect(ship.isSunk).toBe(false);
-    });
-    test('Constructs ship parts based on length',()=>{
-        const length = 3;
-        const ship = new Ship(length);
-        expect(ship.head).toBeDefined();
-        let curIter = ship.head;
-        let i = 0;
-        while(i<length-1){
-            expect(curIter.down).toBeDefined();
-            curIter = curIter.down;
-            i++;
-        }
-        expect(curIter.down).toBe(null);
-    });
-});
-
-describe('Player',()=>{
-    test('Player is constructed correctly', ()=>{
-        const user = {
-            name: "Josh",
-            lastShipGrid: null
-        };
-        const player = new Player(user);
-        expect(player.name).toBe("Josh");
-        expect(player.user).toEqual(user);
-        expect(player.ships).toEqual([]);
+describe('Player', () => {
+    let parent, player;
+    beforeEach(()=>{
+        parent = new User('Josh');
+        player = new Player(parent);
+    })
+    test('Player initializes from User', ()=>{
+        expect(player.name).toBe('Josh');
+        expect(player.parent).toBeDefined();
+        expect(player.fleet.ships.length).toBeGreaterThan(0);
     });
 });
 
