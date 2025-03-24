@@ -380,6 +380,7 @@ export class Game{
      * 
      * @param {Ship} ship
      * @param {Grid} grid
+     * @returns {boolean}
      */
     randomizeShipLayout(ship, grid){
         let randomPos = ranTwoDVec(0,grid.size-1,0,grid.size-1);
@@ -387,6 +388,9 @@ export class Game{
         return false;
     }
 
+    /**
+     * @returns {boolean}
+     */
     randomizeShipLayouts(){
         // pick random point on grid,
         // attempt to place ship,
@@ -395,12 +399,13 @@ export class Game{
         // else pick another random point while ship isnt placed
         for (const player of this.players){
             const playerGrid = this.playerGridMap.get(player);
-            for (const ship of player.fleet){
+            for (const ship of player.fleet.ships){
                 if (ship){
-                    while (!this.randomizeShipLayout(ship, playerGrid)){}
-                } 
+                    if (!this.randomizeShipLayout(ship, playerGrid)) return false;
+                }
             }
         }
+        return true;
     }
 
     async prepPhase(){
