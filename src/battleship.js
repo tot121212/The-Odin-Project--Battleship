@@ -106,21 +106,12 @@ export class Destroyer extends Ship{
 }
 
 export class Fleet{
-    constructor(){
-        this.ships = [new AircraftCarrier(), new Battleship(), new Cruiser(), new Submarine(), new Destroyer()];
-    }
-    [Symbol.iterator]() {
-        let index = 0;
-        const items = this.ships;
-
-        return {
-            next() {
-                if (index < items.length) {
-                    return { value: items[index++], done: false };
-                }
-                return { done: true };
-            }
-        };
+    /**
+     * 
+     * @param {Ship[]} ships 
+     */
+    constructor(ships = [new AircraftCarrier(), new Battleship(), new Cruiser(), new Submarine(), new Destroyer()]){
+        this.ships = ships;
     }
 }
 
