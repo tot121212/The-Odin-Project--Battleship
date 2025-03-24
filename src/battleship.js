@@ -193,23 +193,47 @@ export class Grid{
     }
 
     /**
-     * 
-     * @param {Square} square
-     * @return {Array.<Square>}
+     * Adjacent directions of a square - (up, down, left, right)
      */
-    getAdjacencies(square){
+    static #adjacentDirs = [
+        new Vector2(1,0),
+        new Vector2(-1,0),
+        new Vector2(0,1),
+        new Vector2(0,-1),
+    ];
+
+    /**
+     * Gets existing adjacent positions to a given position
+     * @param {Vector2} pos
+     * @return {Vector2[]}
+     */
+    getAdjacentPositions(pos){
         const acc = [];
-        if (!(square instanceof Square)) return acc;
-        const dirs =  [
-            square.pos.add(new Vector2(1,1)),
-            square.pos.add(new Vector2(-1,-1)),
-            square.pos.add(new Vector2(-1,1)),
-            square.pos.add(new Vector2(1,-1)),
-        ]
-        dirs.forEach((vec)=>{
-            const sqr = this.getSquare(vec);
-            if (sqr) acc.push(sqr);
-        });
+        if (!pos || !(pos instanceof Vector2)) return acc;
+        for (const vec of Grid.#adjacentDirs){
+            const globalPos = pos.add(vec);
+            if (!globalPos) continue;
+            if (!this.getSquare(globalPos)) continue;
+            acc.push(globalPos);
+        }
+        return acc;
+    }
+
+    /**
+     * Gets existing adjacent squares to a given square
+     * @param {Square} square
+     * @return {Square[]}
+     */
+    getAdjacentSquares(square){
+        const acc = [];
+        if (!square || !(square instanceof Square)) return acc;
+        for (const vec of Grid.#adjacentDirs){
+            const globalPos = square.pos.add(vec);
+            if (!globalPos) continue;
+            const sqr = this.getSquare(globalPos);
+            if (!sqr) continue;
+            acc.push(sqr);
+        }
         return acc;
     }
 
