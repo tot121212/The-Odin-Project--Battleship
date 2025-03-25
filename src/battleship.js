@@ -136,6 +136,10 @@ export class Square{
          */
         this.shipParts = new Set(); // we can call methods on the parts parent, so very nice
     }
+    hasShipParts(){
+        if (this.shipParts.size > 0) return true;
+        return false;
+    }
 
     /**
      * 
