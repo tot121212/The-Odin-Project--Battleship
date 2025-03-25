@@ -355,7 +355,7 @@ export class Grid{
         const acc = [];
         if (!square || !(square instanceof Square)) return acc;
         for (const vec of Grid.#adjacentDirs){
-            const globalPos = square.pos.add(vec);
+            const globalPos = square.pos?.add(vec);
             if (!globalPos) continue;
             const sqr = this.getSquare(globalPos);
             if (!sqr) continue;
@@ -506,55 +506,6 @@ export class Game{
             this.playerGridMap.set(player, grid);
             return grid;
         });
-    }
-
-    /**
-     * Place ship, from pos, towards the opposite direction of the ship.face vector, by the ship.length, ensuring that the grid at those positions is valid
-     * @param {Ship} ship
-     * @param {Grid} grid
-     * @param {Vector2} pos
-     * @returns {boolean}
-     */
-    placeShip(ship, grid, pos){
-        try {
-            if (!(ship && grid && pos)) throw new Error("Ship, grid, or pos missing");
-            // make array with positions of all squares needed to place ship
-            // take pos and modulate with the local position of each part to get each parts global position
-            const partToSquare = new Map();
-            // @ts-ignore
-            
-            for (const part of ship.parts){
-                // @ts-ignore
-                const partLocalPos = ship.partLocalPosMap.get(part); // get local pos of part
-                if (!partLocalPos) throw new Error("Part local pos not found");
-                const partGlobalPos = pos.add(new Vector2(partLocalPos[0], partLocalPos[1])); // get globalPos by adding both vec together
-                if (!partGlobalPos) throw new Error("Part global pos not found");
-                const square = grid.getSquare(partGlobalPos);
-                if (!square) throw new Error("Square does not exist");
-                if (square.shipParts.has(part)) throw new Error("Square has that part already");
-                partToSquare.set(part, square);
-            }
-            // after partToSquare is mapped fully, we know that all squares exist and dont already have ships on them
-            for (const [part, square] of partToSquare){
-                square.addShipPart(part);
-            }
-            return true;
-        } catch (error) {
-            console.log(error);
-            return false;
-        }
-    }
-
-    /**
-     * 
-     * @param {Ship} ship
-     * @param {Grid} grid
-     * @returns {boolean}
-     */
-    randomizeShipLayout(ship, grid){
-        let randomPos = ranTwoDVec(0,grid.size-1,0,grid.size-1);
-        if (this.placeShip(ship, grid, randomPos)) return true;
-        return false;
     }
 
     /**
