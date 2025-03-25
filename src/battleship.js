@@ -18,6 +18,7 @@ export class ShipPart{
     }
 
     hit(){
+        if (!this.parent) throw new Error("No parent on ShipPart");
         this.parent.hit(this);
     }
 }
