@@ -1,15 +1,16 @@
-import { AircraftCarrier, Grid, Player, User, Fleet, Destroyer, Bot, Square, ShipPart, Ship, Battleship } from "./battleship.js";
+import { Grid, Player, User, Ship, Battleship, Game } from "./battleship.js";
 import { Vector2 } from "./vector2.js";
 
 
 
 describe('Ships', ()=>{
+    /**
+     * @type {Ship}
+     */
     let ship;
     describe('Ship',()=>{
         beforeEach(()=>{
-            ship = new Ship();
-            ship.length = 4;
-            ship.createParts(ship.length);
+            ship = new Ship(4, undefined, true);
         });
         describe('ShipPart',()=>{
             test('Ship is hit',()=>{
@@ -64,6 +65,10 @@ describe('Grid',()=>{
         expect(adj2.length).toBe(2);
     });
 
+    test('Gets shuffled Vector2 array correctly',()=>{
+        const shuffled = gridObj 
+    });
+
     describe('Ship with ShipParts on Grid',()=>{
         /**
          * @type {Ship}
@@ -111,16 +116,68 @@ describe('Player', () => {
     beforeEach(()=>{
         parent = new User('Josh');
         player = new Player(parent);
-    })
-    test('Player initializes from User', ()=>{
+    });
+    test('Player initializes its fleet', ()=>{
         expect(player.name).toBe('Josh');
         expect(player.parent).toBeDefined();
         expect(player.fleet.ships.length).toBeGreaterThan(0);
     });
 });
 
-
 describe('Game',()=>{
-    
-});
+    const users = [new User('Test Player')];
+    const amtOfBots = 1;
+    const gridSize = 10;
+    const randomizeLayouts = false;
+    /**
+     * @type {Game}
+     */
+    let game;
+    beforeEach(()=>{
+        game = new Game(users, amtOfBots, gridSize, randomizeLayouts);
+    });
 
+    describe('Ship Placement',()=>{
+        /**
+         * @type {Grid}
+         */
+        let grid;
+        /**
+         * @type {Ship}
+         */
+        let ship;
+        beforeEach(()=>{
+            grid = game.grids[0];
+
+            const length = gridSize;
+            const face = new Vector2(1, 0);
+            const shouldCreateParts = true;
+            ship = new Ship(length, face, shouldCreateParts);
+        });
+        test('places ship',()=>{
+            const pos = new Vector2(gridSize - 1,0);
+            grid.placeShip(ship, pos);
+
+            const square = grid.getSquare(pos);
+            if (!square) {expect(square).not.toBeNull(); return;}
+            expect(square.shipParts.size === 1).toBe(true);
+        });
+        test('handles out of bounds', ()=>{
+            const pos = new Vector2(0,0);
+            grid.placeShip(ship, pos);
+
+            const square = grid.getSquare(pos);
+            if (!square) {expect(square).not.toBeNull(); return;}
+            expect(square.shipParts.size === 0).toBe(true);
+        });
+        test('handles spot taken already', ()=>{
+            const pos = new Vector2(gridSize - 1,0);
+            grid.placeShip(ship, pos);
+            grid.placeShip(new Ship(3), pos);
+            
+            const square = grid.getSquare(pos);
+            if (!square) {expect(square).not.toBeNull(); return;}
+            expect(square.shipParts.size === 1).toBe(true);
+        });
+    });
+});
