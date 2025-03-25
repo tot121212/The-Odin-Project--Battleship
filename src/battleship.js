@@ -175,19 +175,17 @@ export class Grid{
      */
     constructor(gridSize){
         this.size = gridSize;
-        this.grid = Grid.newGrid(this.size);
+        this.grid = this.newGrid();
     }
 
     /**
-     * 
-     * @param {number} size
      * @returns {Square[][]}
      */
-    static newGrid(size){
+    newGrid(){
         const grid = [];
-        for (let i = 0; i < size; i++){
+        for (let i = 0; i < this.size; i++){
             const row = [];
-            for (let j = 0; j < size; j++){
+            for (let j = 0; j < this.size; j++){
                 row.push(new Square(new Vector2(i, j)));
             }
             grid.push(row);
@@ -202,7 +200,7 @@ export class Grid{
     }
 
     /**
-     * 
+     * Gets the grid
      * @returns {Square[][]}
      */
     get(){
@@ -210,6 +208,40 @@ export class Grid{
     }
 
     /**
+     * Flattens the grid and returns a new array of squares
+     * @returns {Square[]}
+     */
+    flatten(){
+        const oldArr = this.get();
+        const newArr = [];
+        for (const arr of oldArr){
+            newArr.push(...arr);
+        }
+        return newArr;
+    }
+
+    /**
+     * Gets grid as an array of vector2, the vector2s are referenced from the squares
+     * @returns {Vector2[]}
+     */
+    // getAsVector2(){
+    //     return this.flatten().map((sqr)=>{
+    //         return sqr.pos;
+    //     });
+    // }
+
+    /**
+     * Gets all positions not currently occupied
+     * @returns {Square[]}
+     */
+    getUnoccupiedSquares(){
+        return this.flatten().filter((sqr)=>{
+            return !sqr.hasShipParts();
+        });
+    }
+
+    /**
+     * Gets square at 'grid[globalPos.x][globalPos.y]'
      * @param {Vector2} globalPos - Two element array containing x and y
      * @returns {Square|null} Square on grid
      */
