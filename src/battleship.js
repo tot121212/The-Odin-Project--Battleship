@@ -5,7 +5,6 @@ import { Chance } from "chance";
 const chance = new Chance();
 
 import { Vector2 } from "./vector2.js";
-import { ranTwoDVec } from "./ranTwoDVec.js";
 
 // node representing a square of a ship
 export class ShipPart{
@@ -123,11 +122,11 @@ export class Fleet{
 export class Square{
     /**
      * 
-     * @param {Vector2} pos 
+     * @param {Vector2|undefined} pos 
      */
     constructor(pos){
         /**
-         * @type {Vector2}
+         * @type {Vector2|Undefined}
          */
         this.pos = pos;
         this.wasShot = false;
@@ -230,8 +229,20 @@ export class Grid{
     //     });
     // }
 
+
+    // these are inefficient but ill probably add a map later for occupied squares
     /**
-     * Gets all positions not currently occupied
+     * Gets all squares occupied by **ShipPart**(s)
+     * @returns {Square[]}
+     */
+    getOccupiedSquares(){
+        return this.flatten().filter((sqr)=>{
+            return sqr.hasShipParts();
+        });
+    }
+
+    /**
+     * Gets all squares not occupied by **ShipPart**(s)
      * @returns {Square[]}
      */
     getUnoccupiedSquares(){
@@ -257,6 +268,55 @@ export class Grid{
             return this.grid[globalPos.x][globalPos.y];
         }
         return null;
+    }
+
+    /**
+     * Place ship, from pos, towards the opposite direction of the ship.face vector, by the ship.length, ensuring that the grid at those positions is valid
+     * @param {Ship} ship
+     * @param {Vector2} pos
+     * @returns {boolean|Error}
+     */
+    placeShip(ship, pos){
+        if (!(ship && pos)) return new Error("Ship, grid, or pos missing");
+        /**
+         * @type {Map<ShipPart, Square>}
+         */
+        const partToSquare = new Map();
+        
+        for (const part of ship.parts){
+            const partLocalPos = ship.partLocalPosMap.get(part); // get local pos of part
+            if (!partLocalPos) throw new Error("Part local pos not found"); // throw because we dont expect part to not have a local pos
+
+            const partGlobalPos = pos.add(partLocalPos); // get globalPos by adding both vec together
+            if (!partGlobalPos) throw new Error("Part global pos not found");
+
+            const square = this.getSquare(partGlobalPos);
+            if (!square) return false; //return new Error("Square does not exist");
+            if (square.hasShipParts()) return false;
+            //if (square.shipParts.has(part)) return false; //return new Error("Square has that part already");
+            partToSquare.set(part, square);
+        }
+        // after partToSquare is mapped fully, we know that all squares exist and dont already have ships on them
+        for (const [part, square] of partToSquare){
+            square.addShipPart(part);
+        }
+        return true;
+    }
+
+    /**
+     * Places **ship** at a random position on the **grid**, mutating (popping from) **unoccupiedSquares** in the process
+     * @param {Ship} ship
+     * @param {Grid} grid
+     * @param {Square[]} unoccupiedSquares
+     * @returns {boolean}
+     */
+    placeShipRandomly(ship, grid, unoccupiedSquares = chance.shuffle(grid.getUnoccupiedSquares())){
+        do{
+            const sqr = unoccupiedSquares.pop();
+            if (!sqr?.pos) continue;
+            if (grid.placeShip(ship, sqr.pos) === true) return true;
+        } while (unoccupiedSquares.length > 0);
+        return false;
     }
 
     /**
@@ -394,47 +454,55 @@ export class Player{ // player is only used when a game starts so it doesnt inhe
 
 export class Game{
     /**
-     * 
-     * @param {User[]} users 
-     * @param {number} amtOfBots 
-     * @param {number} gridSize 
+     * @param {User[]} users Array of users
+     * @param {number} amtOfBots Amount of bot players
+     * @param {number} gridSize Size of grid as a num, x * x
+     * @param {boolean} randomize Should the ship layouts be randomized at start
      */
-    constructor(users, amtOfBots = 1, gridSize = 10){
-        //HtmlHandler.loadUsers()
-        const bots = [];
-        for (let i = 0; i < amtOfBots; i++) {
+    constructor(users, amtOfBots = 1, gridSize = 10, randomize = true){
+        this.gridSize = gridSize;
+        this.randomize = randomize;
+
+        this.users = users;
+        this.amtOfBots = amtOfBots;
+        this.bots = this.createBots();
+        
+        this.playerGridMap = new Map();
+        this.players = this.createPlayers();
+        this.grids = this.createGrids();
+    }
+    
+    /**
+     * @returns {Bot[]}
+     */
+    createBots(){
+        let bots = [];
+        for (let i = 0; i < this.amtOfBots; i++) {
             bots.push(new Bot(`Bot ${i + 1}`)); // Create a new Bot instance and add it to the array
         }
-        this.playerGridMap = new Map();
-        this.players = this.createPlayers(users, bots);
-        console.log("Players created:",this.players);
-        this.grids = this.createGrids(gridSize);
-        console.log("Grids created:",this.playerGridMap);
-        this.randomizeShipLayouts();
-        console.log("Randomized ship layouts...");
-        // // allow players to move ships around to where they want them to be
-        // this.prepPhase();
-        // this.gameLoop(0);
+        return bots;
     }
 
     /**
-     * 
-     * @param {User[]} users 
-     * @param {Bot[]} bots 
      * @returns {Player[]}
      */
-    createPlayers(users, bots){
-        return users.concat(bots).map((user) => new Player(user));
+    createPlayers(){
+        return this.users.concat(this.bots).map((user) => new Player(user));
     }
 
     /**
-     * 
-     * @param {number} gridSize 
+     * Creates grids for each player, mapping them to a hashmap of the player and its grid
      * @returns {Grid[]}
      */
-    createGrids(gridSize){
-        return this.players.map((player)=> {
-            const grid = new Grid(gridSize);
+    createGrids(){
+        return this.players.map(
+            /**
+             * 
+             * @param {Player} player 
+             * @returns 
+             */
+            (player)=> {
+            const grid = new Grid(this.gridSize);
             this.playerGridMap.set(player, grid);
             return grid;
         });
@@ -499,10 +567,10 @@ export class Game{
         // try horizontal,
         // else pick another random point while ship isnt placed
         for (const player of this.players){
-            const playerGrid = this.playerGridMap.get(player);
+            const grid = this.playerGridMap.get(player);
             for (const ship of player.fleet.ships){
                 if (ship){
-                    if (!this.randomizeShipLayout(ship, playerGrid)) return false;
+                    if (!grid.placeShipRandomly(ship)) return false;
                 }
             }
         }
@@ -531,13 +599,28 @@ export class Game{
     async gameLoop(curPlayerIdx){
         while (true) {
             const curPlayer = this.players[curPlayerIdx];
-            //await HtmlHandler.updateGrids();
+            //await DOM.updateGrids();
             if (curPlayer.parent instanceof Bot){
-                // await curPlayer.fire()
+                // await curPlayer.fire();
             } else if (curPlayer.parent instanceof User){
-                //await HtmlHandler.getPlayerStrikePos(curPlayer);
+                //await DOM.getPlayerStrikePos(curPlayer);
             }
             curPlayerIdx = (curPlayerIdx + 1) % this.players.length;
         }
+    }
+
+    async startGame(){
+        console.log("Starting game...");
+        //DOM.loadUsers();
+        console.log("Players:",this.players);
+        console.log("Grids:",this.playerGridMap);
+        
+        if (this.randomize === true){
+            console.log("Randomizing ship layouts...");
+            this.randomizeShipLayouts();
+        }
+        // await this.getInitialShipLayout();
+            // this.prepPhase();
+            // this.gameLoop(0);
     }
 }

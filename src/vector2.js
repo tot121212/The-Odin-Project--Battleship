@@ -12,20 +12,37 @@ export class Vector2 {
     }
 
     /**
-     * Returns new Vector2 as a result of adding "this" and "other" together
-     * @param {Vector2} vec 
-     * @returns {Vector2|null}
+     * Duplicates 'this' and returns it
+     * @returns {Vector2}
      */
-    add(vec) {
-        if (!vec || (!(vec instanceof Vector2))) return null;
+    copy(){
+      return new Vector2(this.x, this.y);
+    }
+    
+    /**
+     * Returns new Vector2 as a result of adding 'this' and 'vec' together,
+     * If an argument is not provided or is not valid, will return a duplicate of 'this'
+     * @param {Vector2|undefined} vec 
+     * @returns {Vector2|void}
+     */
+    add(vec = undefined) {
+        if (typeof vec !== 'object' || !(vec instanceof Vector2)) return this.copy();
         else return new Vector2(this.x + vec.x, this.y + vec.y);
     }
+    
     /**
-     * converts vector to an array with two elements, x and y
+     * converts vector to an array with two elements, [x,y]
      * @returns {Array<number,number>}
      */
     toArray(){
       return [this.x, this.y];
+    }
+    /**
+     * converts array to a string in the format of 'x,y'
+     * @returns {string}
+     */
+    toString(){
+      return `${this.x}, ${this.y}`;
     }
     /**
      * Rotates vector 90 degrees counter clockwise
