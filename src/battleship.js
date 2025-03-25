@@ -27,13 +27,22 @@ export class ShipPart{
 // to hit a ship we would go into the grid and search for a ship part thats there, and hit it
 // ship thats part of a fleet
 export class Ship{
-    constructor(){
-        this.length = 0;
+    /**
+     * 
+     * @param {number} length 
+     * @param {Vector2} face 
+     * @param {boolean} shouldCreateParts 
+     */
+    constructor(length = 1, face = new Vector2(1, 0), shouldCreateParts = false){
         this.parts = new Set();
         this.damagedParts = new Set();
-        this.baseFace = new Vector2(1, 0); // starts pointing right
-        this.face = new Vector2(1, 0); // want to be seperate vectors in memory
+        //this.baseFace = new Vector2(1, 0); // starts pointing right
+        this.face = face;
+        /**
+         * @type {Map<ShipPart, Vector2>}
+         */
         this.partLocalPosMap = new Map(); // map of ship part to its local coordinate in layout of ship
+        if (shouldCreateParts) this.createParts(length);
     }
 
     reset(){
@@ -68,41 +77,36 @@ export class Ship{
     }
 }
 
-// DONT LOOK!, IM NOT USING INHERITENCE???
+// This is for if I want to add special powers to ships in the future
 
 export class AircraftCarrier extends Ship{
-    constructor(){
-        super();
-        this.length = 5;
-        this.createParts(this.length);
+    constructor(length = 5, face = undefined){
+        super(length, face);
+        this.createParts(length);
     }
 }
 export class Battleship extends Ship{
-    constructor(){
-        super();
-        this.length = 4;
-        this.createParts(this.length);
+    constructor(length = 4, face = undefined){
+        super(length, face);
+        this.createParts(length);
     }
 }
 export class Cruiser extends Ship{
-    constructor(){
-        super();
-        this.length = 3;
-        this.createParts(this.length);
+    constructor(length = 3, face = undefined){
+        super(length, face);
+        this.createParts(length);
     }
 }
 export class Submarine extends Ship{
-    constructor(){
-        super();
-        this.length = 3;
-        this.createParts(this.length);
+    constructor(length = 3, face = undefined){
+        super(length, face);
+        this.createParts(length);
     }
 }
 export class Destroyer extends Ship{
-    constructor(){
-        super();
-        this.length = 2;
-        this.createParts(this.length);
+    constructor(length = 2, face = undefined){
+        super(length, face);
+        this.createParts(length);
     }
 }
 
