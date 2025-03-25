@@ -14,8 +14,17 @@ class Node {
 
 export class LinkedListQueue {
     constructor() {
+        /**
+         * @type {Node|null}
+         */
         this.head = null;
+        /**
+         * @type {Node|null}
+         */
         this.tail = null;
+        /**
+         * @type {number}
+         */
         this.length = 0;
     }
 
@@ -36,6 +45,10 @@ export class LinkedListQueue {
         }
     }
 
+    /**
+     * 
+     * @returns {any}
+     */
     dequeue() {
         if (!this.head) return null;
         const value = this.head.value;
@@ -45,14 +58,26 @@ export class LinkedListQueue {
         return value;
     }
 
+    /**
+     * 
+     * @returns {any|null}
+     */
     peek() {
         return this.head ? this.head.value : null;
     }
 
+    /**
+     * 
+     * @returns {boolean}
+     */
     isEmpty() {
         return this.length === 0;
     }
 
+    /**
+     * 
+     * @returns {number}
+     */
     size() {
         return this.length;
     }
