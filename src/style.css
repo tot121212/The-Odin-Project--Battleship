@@ -1,3 +1,16 @@
 html{
+    display: flex;
     background-color: aqua;
+}
+.grid{
+    display: grid;
+    grid-auto-flow: row;
+}
+.column{
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: subgrid;
+}
+relative{
+    position: relative;
 }

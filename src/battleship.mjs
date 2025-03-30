@@ -1,10 +1,12 @@
-import { DOM } from "./DOM.js";
-import { LinkedListQueue } from "./llq.js";
+import {v4 as uuidv4} from "uuid";
+
+import { DOM } from "./DOM.mjs";
+import { LinkedListQueue } from "./llq.mjs";
 
 import { Chance } from "chance";
 const chance = new Chance();
 
-import { Vector2 } from "./vector2.js";
+import { Vector2 } from "./vector2.mjs";
 
 // node representing a square of a ship
 export class ShipPart{
@@ -192,6 +194,10 @@ export class Grid{
         return grid;
     }
 
+    getGrid(){
+        return this.grid;
+    }
+
     printGrid(){
         console.log("\Grid:");
         console.table(this.grid);
@@ -304,19 +310,22 @@ export class Grid{
     }
 
     /**
-     * Places **ship** at a random position on the **grid**, mutating (popping from) **unoccupiedSquares** in the process
+     * Places **ship** at a random position on the **grid**, 
+     * mutating (popping from) **unoccupiedSquares** in the process,
+     * returns the square the head of the ship was placed
+     * ***IMPORTANT:*** input a shuffled array of unoccupied squares, it will attempt to shuffle them every operation if you dont
      * @param {Ship} ship
      * @param {Grid} grid
-     * @param {Square[]} unoccupiedSquares
-     * @returns {boolean}
+     * @param {Set<Square>} unoccupiedSquares
+     * @returns {Square|null}
      */
-    placeShipRandomly(ship, grid, unoccupiedSquares = chance.shuffle(grid.getUnoccupiedSquares())){
-        do{
-            const sqr = unoccupiedSquares.pop();
-            if (!sqr?.pos) continue;
-            if (grid.placeShip(ship, sqr.pos) === true) return true;
-        } while (unoccupiedSquares.length > 0);
-        return false;
+    static placeShipRandomly(ship, grid, unoccupiedSquares = new Set(chance.shuffle(grid.getUnoccupiedSquares()))){
+        let sqr;
+        for (const uOSqr of unoccupiedSquares){
+            if (!uOSqr?.pos) continue;
+            if (grid.placeShip(ship, uOSqr.pos) === true) return uOSqr;
+        }
+        return null;
     }
 
     /**
@@ -445,10 +454,15 @@ export class Player{ // player is only used when a game starts so it doesnt inhe
      * 
      * @param {User|Bot} parent 
      */
+
     constructor(parent){
         this.parent = parent;
+        this.uuid = uuidv4(); // basically will generate a new unique id for each session of play
         this.name = parent.name;
         this.fleet = new Fleet(); // stores roots of ships
+    }
+    getUUID(){
+        return this.uuid;
     }
 }
 
@@ -467,7 +481,11 @@ export class Game{
         this.amtOfBots = amtOfBots;
         this.bots = this.createBots();
         
+        /**
+         * @type {Map<Player, Grid>}
+         */
         this.playerGridMap = new Map();
+        this.uuidPlayerMap = new Map();
         this.players = this.createPlayers();
         this.grids = this.createGrids();
     }
@@ -487,7 +505,11 @@ export class Game{
      * @returns {Player[]}
      */
     createPlayers(){
-        return this.users.concat(this.bots).map((user) => new Player(user));
+        return this.users.concat(this.bots).map((user) => {
+            const player = new Player(user);
+            this.uuidPlayerMap.set(player.getUUID(), player);
+            return player;
+        });
     }
 
     /**
@@ -509,6 +531,15 @@ export class Game{
     }
 
     /**
+     * 
+     * @param {Player} player 
+     * @returns 
+     */
+    getGrid(player){
+        return this.playerGridMap.get(player);
+    }
+
+    /**
      * @returns {boolean}
      */
     randomizeShipLayouts(){
@@ -518,11 +549,11 @@ export class Game{
         // try horizontal,
         // else pick another random point while ship isnt placed
         for (const player of this.players){
-            const grid = this.playerGridMap.get(player);
+            const grid = this.getGrid(player);
+            if (!grid) continue;
             for (const ship of player.fleet.ships){
-                if (ship){
-                    if (!grid.placeShipRandomly(ship)) return false;
-                }
+                if (!ship) continue;
+                if (!Grid.placeShipRandomly(ship, grid)) return false;
             }
         }
         return true;

@@ -1,7 +1,5 @@
-import { Grid, Player, User, Ship, Battleship, Game } from "./battleship.js";
-import { Vector2 } from "./vector2.js";
-
-
+import { Grid, Player, User, Ship, Battleship, Game } from "./battleship.mjs";
+import { Vector2 } from "./vector2.mjs";
 
 describe('Ships', ()=>{
     /**
