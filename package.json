@@ -31,6 +31,7 @@
     "chance": "^1.1.12",
     "uuid": "^11.0.5"
   },
+  "type": "module",
   "name": "the-odin-project--battleship",
   "version": "1.0.0",
   "main": "webpack.common.mjs",

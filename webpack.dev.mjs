@@ -13,16 +13,16 @@ export default merge(common, {
     watchFiles: ['src/*'],
     historyApiFallback: true
   },
-  resolve: {
-    fallback: {
-      "path": "path-browserify",
-      "process": "process/browser",
-      "fs": false,
-    },
-  },
-  plugins: [
-    new webpack.ProvidePlugin({
-      process: 'process/browser', // Ensures process is available in all files
-    })
-  ],
+  // resolve: {
+  //   fallback: {
+  //     "path": "path-browserify",
+  //     "process": "process/browser",
+  //     "fs": false,
+  //   },
+  // },
+  // plugins: [
+  //   new webpack.ProvidePlugin({
+  //     process: 'process/browser', // Ensures process is available in all files
+  //   })
+  // ],
 });

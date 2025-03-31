@@ -1,5 +1,3 @@
-import { Module } from "webpack";
-
 class SVG{
     /**
      * @param {any} r
@@ -17,9 +15,6 @@ class SVG{
         return images;
     }
 
-    /** 
-     * @type {Map<string, Module>}
-    */
     static PathToModule = SVG.importAllImages(require.context('../assets/', true, /\.svg$/));
 
     /** 
