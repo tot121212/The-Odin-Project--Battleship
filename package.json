@@ -9,6 +9,7 @@
     "@babel/core": "^7.26.10",
     "@babel/preset-env": "^7.26.9",
     "@types/jest": "^29.5.14",
+    "@types/webpack-env": "^1.18.8",
     "assert": "^2.1.0",
     "babel-jest": "^29.7.0",
     "babel-loader": "^10.0.0",
