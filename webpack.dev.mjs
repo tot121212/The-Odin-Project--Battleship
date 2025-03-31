@@ -5,7 +5,7 @@ import webpack from 'webpack';
 // @ts-ignore
 export default merge(common, {
   mode: 'development',
-  devtool: 'eval-source-map',
+  devtool: 'source-map',
   devServer: {
     static: './dist',
     open: false,
