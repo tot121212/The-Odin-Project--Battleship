@@ -8,31 +8,29 @@ const __dirname = path.dirname(__filename);
 
 export default {
   entry: {
-    app: './src/index.mjs'
+    app: './src/index.mjs',
   },
 
   output: {
     filename: '[name].bundle.mjs',
     path: path.resolve(__dirname, 'dist'),
-    clean: true
+    clean: true,
   },
 
   plugins: [
     new HtmlWebpackPlugin({
-      template: './src/index.html'
+      template: './src/index.html',
     }),
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
     }),
   ],
 
-  
-
   module: {
     rules: [
       {
         test: /\.css$/i,
-        use: ['style-loader', 'css-loader']
+        use: ['style-loader', 'css-loader'],
       },
       {
         test: /\.html$/i,
@@ -41,9 +39,6 @@ export default {
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
         type: 'asset/resource',
-        generator: {
-          filename: 'images/[name][ext]'
-        }
       },
       {
         test: /\.m?js$/,
@@ -51,10 +46,10 @@ export default {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['@babel/preset-env']
+            presets: ['@babel/preset-env'],
           }
         }
-      }
+      },
     ]
   }
 };

@@ -1,32 +1,12 @@
-class SVG{
-    /**
-     * @param {any} r
-     */
-    static importAllImages(r){
-        const images = new Map;
-        r.keys().forEach(
-            /**
-             * 
-             * @param {*} key 
-             */
-            (key)=>{
-            images.set(key.replace('./',''), r(key));
-        });
-        return images;
-    }
+// @ts-ignore
+import squareOutline from "./assets/squareOutline.svg";
+// @ts-ignore
+import squareRounded from "./assets/squareRounded.svg";
+// @ts-ignore
+import skullOutline from "./assets/skullOutline.svg";
 
-    static PathToModule = SVG.importAllImages(require.context('../assets/', true, /\.svg$/));
-
-    /** 
-     * @type {Map<string, string>}
-    */
-    static NameToPath = new Map();
-
-    static {
-        for (const path in SVG.PathToModule.keys()){
-            SVG.NameToPath.set(path.replace(/^\.\/|\.svg$/g, ''), path);
-        }
-    }
-}
-
-export default {SVG};
+export default new Map([
+  ["squareOutline", squareOutline],
+  ["squareRounded", squareRounded],
+  ["skullOutline", skullOutline],
+]);
