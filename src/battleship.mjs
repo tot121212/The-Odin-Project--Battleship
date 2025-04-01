@@ -8,6 +8,36 @@ const chance = new Chance();
 
 import { Vector2 } from "./vector2.mjs";
 
+const DIRECTION = {
+    HORIZ: {
+        LEFT: new Vector2(-1, 0),
+        RIGHT: new Vector2(1, 0),
+    },
+    VERT: {
+        DOWN: new Vector2(0, -1),
+        UP: new Vector2(0, 1),
+    },
+    DIAG: {
+        UP_LEFT: new Vector2(-1, -1),
+        UP_RIGHT: new Vector2(1, -1),
+        DOWN_LEFT: new Vector2(-1, 1),
+        DOWN_RIGHT: new Vector2(1, 1),
+    },
+    getHorizVert: () => {
+        return Object.values(DIRECTION.HORIZ).concat(
+            Object.values(DIRECTION.VERT)
+        );
+    },
+    getDiag: () => {
+        return Object.values(DIRECTION.DIAG);
+    },
+    get: () => {
+        return Object.values(DIRECTION.HORIZ)
+            .concat(Object.values(DIRECTION.VERT))
+            .concat(Object.values(DIRECTION.DIAG));
+    },
+};
+
 // node representing a square of a ship
 export class ShipPart {
     /**
