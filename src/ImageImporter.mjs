@@ -6,7 +6,7 @@ import squareRounded from "./assets/squareRounded.svg";
 import skullOutline from "./assets/skullOutline.svg";
 
 export default new Map([
-  ["squareOutline", squareOutline],
-  ["squareRounded", squareRounded],
-  ["skullOutline", skullOutline],
+    ["squareOutline", squareOutline],
+    ["squareRounded", squareRounded],
+    ["skullOutline", skullOutline],
 ]);
