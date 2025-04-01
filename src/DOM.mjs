@@ -4,8 +4,8 @@ import Images from "./ImageImporter.mjs";
 
 export class DOM {
     /**
-     *
-     * @param {Game} game
+     * 
+     * @param {Game} game 
      */
     constructor(game) {
         /**
@@ -15,23 +15,71 @@ export class DOM {
         /**
          * @type {Set}
          */
-        this.GridElementSet = new Set();
+        this.Grids = new Set();
         /**
          * @type {Element|null}
          */
         this.Content = document.querySelector(".content");
     }
 
+    onStartGame(e){
+        const startButton = e.target;
+        // @ts-ignore
+        startButton.classList.add("hidden");
+        this.CurGame.startGame();
+        this.updateGrids();
+        document.querySelector(".grids")?.classList.remove("hidden");
+        console.log("DOM: Started game");
+    }
+
     loadTemplate() {
-        const newGridsContainer = this.getGridContainer(this.CurGame);
+        const newGridsContainer = this.createGridContainer();
         if (!newGridsContainer)
             throw new Error("HTML: Grids failed to initialize");
         //console.log("Appended grid containers");
-        this.updateGrids(this.CurGame);
         this.Content?.append(newGridsContainer);
-        this.Content?.addEventListener("click", (e) => {
+        this.Content?.addEventListener("click",(e) => {
             if (!e || !e.target) return;
+            // @ts-ignore
+            if (e.target.classList.contains("start-game")) {
+                this.onStartGame(e);
+            }
         });
+    }
+
+    /**
+     * 
+     * @param {number} sqrIdx 
+     * @returns 
+     */
+    static createSquare(sqrIdx){
+        const squareElement = document.createElement("button");
+        squareElement.classList.add(
+            "square",
+            "grabbable",
+            "img-container"
+        );
+        squareElement.dataset.idx = sqrIdx.toString();
+        DOM.drawSquare(squareElement);
+        
+        return squareElement;
+    }
+
+    /**
+     * 
+     * @param {*} column 
+     * @param {number} colIdx
+     */
+    static createColumn(column, colIdx) {
+        const columnElement = document.createElement("div");
+        columnElement.classList.add("column");
+        columnElement.dataset.idx = colIdx.toString();
+        let sqrIdx = 0;
+        for (const square of column) {
+            columnElement.append(this.createSquare(sqrIdx));
+            sqrIdx += 1;
+        }
+        return columnElement;
     }
 
     /**
@@ -40,7 +88,7 @@ export class DOM {
      * @param {string} playerUUID
      * @returns {Element|null}
      */
-    createGridElements(grid, playerUUID) {
+    static createGrid(grid, playerUUID) {
         const gridElement = document.createElement("div");
         gridElement.classList.add("grid");
         gridElement.dataset.uuid = playerUUID;
@@ -48,48 +96,32 @@ export class DOM {
         // load grid into html
         let colIdx = 0;
         for (const column of playerGrid) {
-            const columnElement = document.createElement("div");
-            columnElement.classList.add("column");
-            columnElement.dataset.idx = colIdx.toString();
-            let sqrIdx = 0;
-            for (const square of column) {
-                const squareElement = document.createElement("button");
-                squareElement.classList.add(
-                    "square",
-                    "grabbable",
-                    "img-container"
-                );
-                squareElement.dataset.idx = sqrIdx.toString();
-                DOM.drawSquare(squareElement);
-                columnElement.append(squareElement);
-                sqrIdx += 1;
-            }
-            gridElement.append(columnElement);
+            gridElement.append(this.createColumn(column, colIdx));
             colIdx += 1;
         }
-        this.GridElementSet.add(gridElement);
+        
         return gridElement;
     }
 
     /**
      * Initializes grids for the game passed as an argument, then returns the gridContainer created
-     * @param {Game} game
      * @returns {Element}
      */
-    getGridContainer(game) {
-        this.GridElementSet.clear();
-        const gridsContainer = document.createElement("div");
-        gridsContainer.classList.add("grids-container");
-        for (const entry of game.playerGridMap.entries()) {
+    createGridContainer() {
+        const gridContainer = document.createElement("div");
+        gridContainer.classList.add("grids");
+        for (const entry of this.CurGame.playerGridMap.entries()) {
             /** @type {[Player, Grid]} */
             const [player, grid] = entry;
-            const newGrid = this.createGridElements(grid, player.getUUID());
-            if (!newGrid) throw new Error("Grid was not creatable");
-            gridsContainer.append(newGrid);
+            const gridElement = DOM.createGrid(grid, player.getUUID());
+            if (!gridElement) throw new Error("Grid was not creatable");
+            this.Grids.add(gridElement);
+            gridContainer.append(gridElement);
         }
-        if (!(gridsContainer.children.length > 0))
+        if (!(gridContainer.children.length > 0))
             throw new Error("Grids container is empty");
-        return gridsContainer;
+        gridContainer.classList.add("hidden");
+        return gridContainer;
     }
 
     /**
@@ -110,10 +142,9 @@ export class DOM {
         } else {
             squareElement.dataset.wasShot = "f";
         }
-        //console.log("Filled square data for ", squareElement.tagName, "with square ", square);
     }
 
-    static SVG = (() => {
+    static IMG = (() => {
         const NameToAlt = new Map([
             ["squareOutline", "□"],
             ["skullOutline", "💀"],
@@ -121,7 +152,7 @@ export class DOM {
         ]);
 
         /**
-         * Creates a new object for an svg and adds data, type, and alt
+         * Creates a new object for an IMG and adds data, type, and alt
          * @param {string} path
          * @param {string} alt
          * @returns {HTMLElement}
@@ -134,7 +165,7 @@ export class DOM {
         };
 
         /**
-         * Create svg object
+         * Create IMG object
          * @param {string} name
          * @param {string[]} classes
          * @param {string} alt
@@ -163,66 +194,68 @@ export class DOM {
      * @param {HTMLButtonElement} squareElement
      */
     static drawSquare(squareElement) {
-        const squareOutline = DOM.SVG.createImgElementFromName("squareOutline");
-        const squareRounded = DOM.SVG.createImgElementFromName("squareRounded");
-        const squareSkull = DOM.SVG.createImgElementFromName("skullOutline");
-        squareOutline.hidden = true;
-        squareRounded.hidden = true;
-        squareSkull.hidden = true;
-        squareElement.append(squareOutline, squareRounded, squareSkull);
+        const squareOutline = DOM.IMG.createImgElementFromName("squareOutline");
+        const squareRounded = DOM.IMG.createImgElementFromName("squareRounded");
+        const skullOutline = DOM.IMG.createImgElementFromName("skullOutline");
+        squareOutline.classList.add("hidden");
+        squareRounded.classList.add("hidden");
+        skullOutline.classList.add("hidden");
+        squareElement.dataset.update = "t";
+        squareElement.append(squareOutline, squareRounded, skullOutline);
     }
 
     /**
-     * Shows and hides appropriate svg objects for html representation of square
+     * Shows and hides appropriate IMG objects for html representation of square
      * @param {HTMLButtonElement} squareElement
      */
     static updateSquare(squareElement) {
         const hasShipPart = squareElement.dataset.hasShipPart;
-        const squareFilledObj = squareElement.querySelector(
-            "object.squareFilled"
-        );
+        const squareRounded = squareElement.querySelector("img.squareRounded");
+        if (!squareRounded)
+            throw new Error("Square rounded element does not exist");
         if (hasShipPart === "t") {
-            squareFilledObj?.classList.remove("hidden");
+            squareRounded.classList.remove("hidden");
         } else {
-            squareFilledObj?.classList.add("hidden");
+            squareRounded.classList.add("hidden");
         }
 
         const wasShot = squareElement.dataset.wasShot;
-        const squareSkull = squareElement.querySelector("object.squareSkull");
+        const skullOutline = squareElement.querySelector("img.skullOutline");
+        if (!skullOutline)
+            throw new Error("Square skull element does not exist");
         if (wasShot === "t") {
-            squareSkull?.classList.remove("hidden");
+            skullOutline.classList.remove("hidden");
         } else {
-            squareSkull?.classList.add("hidden");
+            skullOutline.classList.add("hidden");
         }
     }
 
     /**
      * Updates the grid based on whether it has shipParts or was
-     * @param {Game} game
      */
-    updateGrids(game) {
-        for (const gridElement of this.GridElementSet) {
-            const player = game.uuidPlayerMap.get(gridElement.dataset.uuid);
-            const grid = game.playerGridMap.get(player);
+    updateGrids() {
+        for (const gridElement of this.Grids) {
+            const player = this.CurGame.uuidPlayerMap.get(gridElement.dataset.uuid);
+            const grid = this.CurGame.playerGridMap.get(player);
             if (!player || !grid)
                 throw new Error("Player or Grid no longer exist");
             for (const columnElement of gridElement.children) {
                 const colIdxToNum = Number(columnElement.dataset.idx);
                 for (const squareElement of columnElement.children) {
+                    //console.log("Square element: ", squareElement);
                     if (squareElement.dataset.update === "t") {
                         const sqrIdxToNum = Number(squareElement.dataset.idx);
                         const squarePos = new Vector2(colIdxToNum, sqrIdxToNum);
                         const square = grid.getSquare(squarePos);
                         DOM.fillSquareData(squareElement, square);
                         DOM.updateSquare(squareElement);
+                        squareElement.dataset.update = "f";
+                        //console.log("Updated square ", squareElement.tagName, "with square ", square);
                     }
                 }
             }
         }
-        //console.log("Updated grid");
     }
-
-    static onStartGame(game) {}
 
     static async getPlayerStrikePos() {
         // await post request that player sends to continue game, strikePos

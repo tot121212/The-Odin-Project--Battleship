@@ -6,7 +6,9 @@ import { DOM } from "./DOM.mjs";
 
 document.addEventListener("DOMContentLoaded", (e) => {
     console.log("DOMContentLoaded");
-    const game = new Game([new User("Test")]);
+    // this would be an event handler to grab the user from a cookie or smthn if it existed
+    const mainUser = new User("User 1");
+    const game = new Game(mainUser);
     const dom = new DOM(game);
     dom.loadTemplate();
 });
