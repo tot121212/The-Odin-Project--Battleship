@@ -127,7 +127,7 @@ describe("Player", () => {
 });
 
 describe("Game", () => {
-    const users = [new User("Test Player")];
+    const mainUser = new User("Test Player");
     const amtOfBots = 1;
     const gridSize = 10;
     const randomizeLayouts = false;
@@ -136,7 +136,7 @@ describe("Game", () => {
      */
     let game;
     beforeEach(() => {
-        game = new Game(users, amtOfBots, gridSize, randomizeLayouts);
+        game = new Game(mainUser, amtOfBots, gridSize, randomizeLayouts);
     });
 
     describe("Ship Placement", () => {
