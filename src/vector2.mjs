@@ -1,12 +1,21 @@
 export class Vector2 {
     /**
-     * 
      * @param {number} x
      * @param {number} y
      */
     constructor(x, y) {
-      if (!(typeof x === 'number')) throw new Error("x is not a number");
-      if (!(typeof y === 'number')) throw new Error("y is not a number");
+      this.x = x;
+      this.y = y;
+    }
+    
+    /**
+     * Sets the x and y values of the vector
+     * @param {number} x 
+     * @param {number} y 
+     */
+    set(x, y){
+      if (typeof x !== 'number') throw new Error("x is not a number");
+      if (typeof y !== 'number') throw new Error("y is not a number");
       this.x = x;
       this.y = y;
     }
@@ -44,21 +53,28 @@ export class Vector2 {
     toString(){
       return `${this.x}, ${this.y}`;
     }
+
     /**
-     * Rotates vector 90 degrees counter clockwise
-     * @param {Vector2} vec
-     * @returns {Vector2|null}
+     * Returns new Vector2 as a result of multiplying 'this' by 'by'
+     * If an argument is not provided or is not valid, will return a duplicate of 'this'
+     * @param {Vector2} by 
+     * @returns {Vector2}
      */
-    rotateCounterClock90Deg(vec){
-      if (!vec || !(vec instanceof Vector2)) return null;
-      else return new Vector2(-vec.y, vec.x);
+    transform(by){
+      if (typeof by !== 'object' || !(by instanceof Vector2)) return this.copy();
+      return new Vector2(
+          this.x * by.x + this.y * by.y,
+          this.x * by.y - this.y * by.x
+      );
     }
+
     /**
-     * Rotates vector 90 degrees clockwise
+     * Compares two Vector2 objects, returning true if they are equal and false if not
      * @param {Vector2} vec
+     * @returns {boolean}
      */
-    rotateClock90Deg(vec) {
-      if (!vec || !(vec instanceof Vector2)) return null;
-      return new Vector2(vec.y, -vec.x);
+    equals(vec){
+      if (typeof vec !== 'object' || !(vec instanceof Vector2)) return false;
+      return this.x === vec.x && this.y === vec.y;
     }
 }
