@@ -32,17 +32,32 @@ export class DOM {
         console.log("DOM: Started game");
     }
 
+    onSubmitShipLayout(e){
+        // query for grid layout
+
+        // confirm that ship pos and faces are valid
+        // wipe grid and replace ships with faces
+    }
+
     loadTemplate() {
         const newGridsContainer = this.createGridContainer();
         if (!newGridsContainer)
             throw new Error("HTML: Grids failed to initialize");
-        //console.log("Appended grid containers");
         this.Content?.append(newGridsContainer);
-        this.Content?.addEventListener("click",(e) => {
-            if (!e || !e.target) return;
-            // @ts-ignore
+        this.Content?.addEventListener("click", (e) => {
+            if (!e?.target) return;
+            if (!(e.target instanceof Element)) return;
+
             if (e.target.classList.contains("start-game")) {
+                if (this.CurGame.gameState.get() !== "init") return;
+                if (!this.CurGame.hasUsers()) return;
                 this.onStartGame(e);
+            }
+
+            if (e.target.classList.contains("submit-ship-layout")){
+                if (this.CurGame.gameState.get() !== "prep") return;
+                if (!(e.target instanceof HTMLButtonElement)) return;
+                this.onSubmitShipLayout(e);
             }
         });
     }
@@ -231,7 +246,7 @@ export class DOM {
     }
 
     /**
-     * Updates the grid based on whether it has shipParts or was
+     * Updates the grid based on whether it hasShipParts() or wasShot
      */
     updateGrids() {
         for (const gridElement of this.Grids) {

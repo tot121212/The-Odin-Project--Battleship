@@ -549,6 +549,36 @@ export class Player {
     }
 }
 
+class GameState{
+    constructor() {
+        this.state = "init"; // init, prep, play, done
+    }
+
+    /**
+     * 
+     * @param {string} state 
+     */
+    set(state) {
+        if (typeof state !== "string") throw new Error("State is not a string");
+        if (state === this.state) return; // no need to set the same state
+        switch (state) {
+            case "init":
+            case "prep":
+            case "play":
+            case "done":
+                this.state = state;
+                break;
+            default:
+                throw new Error("Invalid game state");
+                break;
+        }
+    }
+
+    get() {
+        return this.state;
+    }
+}
+
 export class Game {
     /**
      * @param {User} host Main user of game
@@ -573,6 +603,8 @@ export class Game {
         this.uuidPlayerMap = new Map();
         this.players = this.createPlayers();
         this.grids = this.createGrids();
+
+        this.gameState = new GameState();
     }
 
     /**
@@ -591,6 +623,10 @@ export class Game {
                 ship.reset();
             });
         });
+    }
+
+    hasUsers() {
+        return this.users.length > 0;
     }
 
     /**
@@ -677,37 +713,60 @@ export class Game {
     }
 
     /**
+     * 
+     * @param {Player} player 
+     * @returns 
+     */
+    randomizeShipLayout(player){
+        const grid = this.getGrid(player);
+        if (!grid) return false;
+        const unoccupiedSquares = grid.getShuffledUnoccupiedSquares();
+        if (unoccupiedSquares.length === 0) return false;
+        for (const ship of player.fleet.ships) {
+            if (!ship) continue;
+            if (!grid.placeShipRandomly(ship, unoccupiedSquares))
+                return false;
+        }
+        return true;
+    }
+
+    /**
      * @returns {boolean}
      */
     randomizeShipLayouts() {
+        if (!this.randomize) return true;
         for (const player of this.players) {
-            const grid = this.getGrid(player);
-            if (!grid) continue;
-            const unoccupiedSquares = grid.getShuffledUnoccupiedSquares();
-            if (unoccupiedSquares.length === 0) return false;
-            for (const ship of player.fleet.ships) {
-                if (!ship) continue;
-                if (!grid.placeShipRandomly(ship, unoccupiedSquares))
-                    return false;
-            }
+            this.randomizeShipLayout(player);
         }
         console.log("Ship layouts randomized for players:", this.playerGridMap);
         return true;
     }
 
-    async prepPhase() {
-        for (const player of this.players) {
-            if (player.parent instanceof User) {
-                // send get request for users updated grid
-                // await player post of updated grid
-                // could be done with workers but not the purpose of the project
-                // verify their grid
-                // replace their grid with identical one
-                // update playerGridMap
+    static prepPhaseTime = 10000;
+    
+    /**
+     * Prep grids with updated player ship head positions and faces, we can rebuild them with just that info
+     */
+    prepPhase() {
+        console.log("Prep phase started");
+
+        // set interval of 10 seconds before force continue
+        const checkIfAllPlayersPrep = () => {
+            const count = 0;
+            for (const player of this.players) {
+                if (player.parent instanceof User) {
+                    console.log(`Checking ship layout for player: ${player.name}`);
+                    // Add logic to fetch and verify user ship data here
+
+                }
             }
         }
-        // allow players to move pieces randomly
-        // bots are already random so ignore them
+        const interval = setInterval(checkIfAllPlayersPrep, Game.prepPhaseTime/10-1);
+    
+        setTimeout(() => {
+            clearInterval(interval); // Stop the interval after 10 seconds
+            console.log("Preparation phase ended. Proceeding to the game...");
+        }, Game.prepPhaseTime);
     }
 
     /**
@@ -733,11 +792,10 @@ export class Game {
         console.log("Players:", this.players);
         console.log("Grids:", this.playerGridMap);
 
-        if (this.randomize) this.randomizeShipLayouts();
+        this.randomizeShipLayouts();
 
         this.printGrids();
-
-        // await this.getInitialShipLayout();
+        this.gameState.set("prep");
         // this.prepPhase();
         // await this.gameLoop(0);
         // end game loop

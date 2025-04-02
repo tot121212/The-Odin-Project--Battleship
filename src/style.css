@@ -55,6 +55,7 @@ button.square:hover {
 
 button.square:active {
     transform: scale(0.7);
+    transition: rotate 0.2s ease-out;
     rotate: 0deg;
 }
 
