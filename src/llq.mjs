@@ -1,4 +1,4 @@
-class Node {
+export class Node {
     /**
      * 
      * @param {any} value 
@@ -12,7 +12,7 @@ class Node {
     }
 }
 
-export class LinkedListQueue {
+class LinkedListQueue {
     constructor() {
         /**
          * @type {Node|null}
@@ -82,3 +82,5 @@ export class LinkedListQueue {
         return this.length;
     }
 }
+
+export default LinkedListQueue;

@@ -1,4 +1,4 @@
-import { Vector2 } from "./vector2.mjs";
+import Vector2 from "./vector2.mjs";
 import { Game, Player, Grid, Square } from "./battleship.mjs";
 import Images from "./ImageImporter.mjs";
 
@@ -34,7 +34,6 @@ export class DOM {
 
     onSubmitShipLayout(e){
         // query for grid layout
-
         // confirm that ship pos and faces are valid
         // wipe grid and replace ships with faces
     }
@@ -49,13 +48,11 @@ export class DOM {
             if (!(e.target instanceof Element)) return;
 
             if (e.target.classList.contains("start-game")) {
-                if (this.CurGame.gameState.get() !== "init") return;
                 if (!this.CurGame.hasUsers()) return;
                 this.onStartGame(e);
             }
 
             if (e.target.classList.contains("submit-ship-layout")){
-                if (this.CurGame.gameState.get() !== "prep") return;
                 if (!(e.target instanceof HTMLButtonElement)) return;
                 this.onSubmitShipLayout(e);
             }

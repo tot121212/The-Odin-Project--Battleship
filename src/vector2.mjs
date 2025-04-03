@@ -1,4 +1,4 @@
-export class Vector2 {
+class Vector2 {
     /**
      * @param {number} x
      * @param {number} y
@@ -78,3 +78,5 @@ export class Vector2 {
       return this.x === vec.x && this.y === vec.y;
     }
 }
+
+export default Vector2;
