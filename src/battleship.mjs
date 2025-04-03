@@ -755,6 +755,7 @@ export class Game {
      * Prep grids with updated player ship head positions and faces, we can rebuild them with just that info
      */
     async prepPhase() {
+        const checkPrepTime = Math.max(this.prepPhaseTime-1, 1);
         const notReadyPlayers = new Set();
         const readyPlayers = new Set();
         for (const player of this.players){
@@ -767,7 +768,7 @@ export class Game {
         let prep = new Promise((resolve, reject)=>{
             console.log("Prep phase started");
 
-            setTimeout(() => {  // set interval before forcing the next phase
+            const timeout = setTimeout(() => {  // set interval before forcing the next phase
                 clearInterval(interval);
                 console.log("Preparation phase ended. Proceeding to the game...");
                 reject("Force end prep phase");
@@ -789,11 +790,12 @@ export class Game {
                     }
                 }
                 if (readyPlayers.size === this.players.length){
+                    clearTimeout(timeout);
                     clearInterval(interval);
                     resolve("All players have prepped");
                 }
             }
-            const interval = setInterval(checkIfPlayersIsPrepped, Math.max(this.prepPhaseTime/10-1, 1));
+            const interval = setInterval(checkIfPlayersIsPrepped, checkPrepTime);
         });
         await prep;
     }
