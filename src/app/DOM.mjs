@@ -1,17 +1,13 @@
-import Vector2 from "./vector2.mjs";
+import Vector2 from "../server/vector2.mjs";
 import { Game, Player, Grid, Square } from "./battleship.mjs";
 import Images from "./ImageImporter.mjs";
 
 export class DOM {
-    /**
-     * 
-     * @param {Game} game 
-     */
-    constructor(game) {
+    constructor() {
         /**
          * @type {Game}
          */
-        this.CurGame = game;
+        this.CurGame = null;
         /**
          * @type {Set}
          */
@@ -20,6 +16,10 @@ export class DOM {
          * @type {Element|null}
          */
         this.Content = document.querySelector(".content");
+    }
+
+    setCurGame(game){
+        this.CurGame = game;
     }
 
     onStartGame(e){
@@ -33,9 +33,36 @@ export class DOM {
     }
 
     onSubmitShipLayout(e){
-        // query for grid layout
+        /**
+         * @type {HTMLDivElement|null}
+         */
+        const user = document.querySelector(".user");
+        if (!user) throw new Error("No user found");
+        const userID = user.dataset.id;
+        if (!userID) throw new Error("No userID found");
+        const layout = document.querySelector(`.grid[data-user-id=${userID}]`);
+        if (!layout) throw new Error("Layout not found for user");
+        //this.CurGame.submitShipLayout(layout, userID);
         // confirm that ship pos and faces are valid
         // wipe grid and replace ships with faces
+    }
+
+    onStrikeSquare(e){
+        const playerID = e.target.closest(".grid").dataset.playerID;
+        const squarePos = e.target.dataset.idx;
+        const posAsArr = squarePos.split(",").map(Number);
+        if (posAsArr.length !== 2) console.error("Strike pos has invalid amt of args");
+        for (const num of posAsArr){
+            if (!Number.isInteger(num)) console.error("Pos x or y is not a number");
+        }
+        // supposed to simulate api call
+        const result = this.CurGame.strikePos(new Vector2(posAsArr[0],posAsArr[1]), playerID);
+        if (typeof result === "string"){
+            console.log(result);
+            return false;
+        } else {
+            return true;
+        }
     }
 
     loadTemplate() {
@@ -52,26 +79,30 @@ export class DOM {
                 this.onStartGame(e);
             }
 
-            if (e.target.classList.contains("submit-ship-layout")){
+            else if (e.target.classList.contains("submit-ship-layout")){
                 if (!(e.target instanceof HTMLButtonElement)) return;
                 this.onSubmitShipLayout(e);
+            }
+
+            else if (e.target.classList.contains("square")) {
+                this.onStrikeSquare(e);
             }
         });
     }
 
     /**
-     * 
-     * @param {number} sqrIdx 
+     * @param {number} colIdx 
+     * @param {number} rowIdx 
      * @returns 
      */
-    static createSquare(sqrIdx){
+    static createSquare(colIdx, rowIdx){
         const squareElement = document.createElement("button");
         squareElement.classList.add(
             "square",
             "grabbable",
             "img-container"
         );
-        squareElement.dataset.idx = sqrIdx.toString();
+        squareElement.dataset.idx = rowIdx.toString() + "," + colIdx.toString();
         DOM.drawSquare(squareElement);
         
         return squareElement;
@@ -79,17 +110,17 @@ export class DOM {
 
     /**
      * 
-     * @param {*} column 
+     * @param {*} column
      * @param {number} colIdx
      */
     static createColumn(column, colIdx) {
         const columnElement = document.createElement("div");
         columnElement.classList.add("column");
         columnElement.dataset.idx = colIdx.toString();
-        let sqrIdx = 0;
+        let rowIdx = 0;
         for (const square of column) {
-            columnElement.append(this.createSquare(sqrIdx));
-            sqrIdx += 1;
+            columnElement.append(this.createSquare(colIdx, rowIdx));
+            rowIdx += 1;
         }
         return columnElement;
     }
@@ -97,13 +128,13 @@ export class DOM {
     /**
      * Creates grid element for provided grid, associating it with the given player
      * @param {Grid} grid
-     * @param {string} playerUUID
+     * @param {string} playerID
      * @returns {Element|null}
      */
-    static createGrid(grid, playerUUID) {
+    static createGrid(grid, playerID) {
         const gridElement = document.createElement("div");
         gridElement.classList.add("grid");
-        gridElement.dataset.uuid = playerUUID;
+        gridElement.dataset.playerID = playerID;
         const playerGrid = grid.get();
         // load grid into html
         let colIdx = 0;
@@ -247,7 +278,11 @@ export class DOM {
      */
     updateGrids() {
         for (const gridElement of this.Grids) {
-            const player = this.CurGame.uuidPlayerMap.get(gridElement.dataset.uuid);
+            // DO NOT DO THIS
+            // SEND A REQUEST TO GAME TO GET UPDATED SQUARE INFORMATION AT A PER INDEX BASIS
+            // THE GAME SHOULD HANDLE WHAT DATA HAS BEEN CHANGED OR NOT AND
+            // SEND YOU ONLY THE SQUARES THAT ACTUALLY NEED TO BE UPDATED
+            const player = this.CurGame.uuidPlayerMap.get(gridElement.dataset.playerID);
             const grid = this.CurGame.playerGridMap.get(player);
             if (!player || !grid)
                 throw new Error("Player or Grid no longer exist");
@@ -259,6 +294,7 @@ export class DOM {
                         const sqrIdxToNum = Number(squareElement.dataset.idx);
                         const squarePos = new Vector2(colIdxToNum, sqrIdxToNum);
                         const square = grid.getSquare(squarePos);
+                        if (!square) throw new Error("Square does not exist");
                         DOM.fillSquareData(squareElement, square);
                         DOM.updateSquare(squareElement);
                         squareElement.dataset.update = "f";

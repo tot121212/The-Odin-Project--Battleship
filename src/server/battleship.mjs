@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 
-import { DOM } from "./DOM.mjs";
+import { DOM } from "../app/DOM.mjs";
 import LinkedListQueue from "./llq.mjs";
 
 import { Chance } from "chance";
@@ -234,7 +234,11 @@ export class Square {
         this.shipParts.delete(part);
     }
 
-    attackShipParts() {
+    /**
+     *
+     * @returns {boolean} Returns whether the square was shot already or not
+     */
+    attack() {
         if (this.wasShot === true) return false;
         this.wasShot = true;
         for (const part of this.shipParts) {
@@ -454,11 +458,11 @@ export class Grid {
     /**
      *
      * @param {Vector2} pos
-     * @returns {boolean}
+     * @returns {boolean} Returns whether the square
      */
     attackPos(pos) {
         const square = this.getSquare(pos);
-        if (square) return square.attackShipParts();
+        if (square) return square.attack();
         return false;
     }
 
@@ -516,8 +520,15 @@ export class User {
      *
      * @param {string} name
      */
-    constructor(name) {
+    constructor(name, uuid = uuidv4()) {
         this.name = name;
+        /**
+         * @type {string}
+         */
+        this.uuid = uuid; // users have their own id as well
+    }
+    getUUID() {
+        return this.uuid;
     }
 }
 
@@ -556,24 +567,22 @@ export class Player {
          * @type {boolean}
          */
         this.ready = false;
-
-        this.attackPos = null; // position to attack in play phase
     }
 
     getUUID() {
         return this.uuid;
     }
 
-    isReady(){
+    isReady() {
         return this.ready;
     }
 
     /**
-     * 
-     * @param {boolean} bool 
+     *
+     * @param {boolean} bool
      */
-    setReady(bool){
-        if (bool){
+    setReady(bool) {
+        if (bool) {
             this.ready = true;
         } else {
             this.ready = false;
@@ -593,8 +602,8 @@ export class Game {
         amtOfBots = 1,
         gridSize = 10,
         randomize = true,
-        prepPhaseTime = 20000,
-        playerTurnLength = 10000
+        prepPhaseMS = 20000,
+        playerTurnMS = 10000
     ) {
         this.host = host;
 
@@ -613,8 +622,32 @@ export class Game {
         this.players = this.createPlayers();
         this.grids = this.createGrids();
 
-        this.prepPhaseTime = prepPhaseTime;
-        this.playerTurnLength = playerTurnLength;
+        this.prepPhaseMS = prepPhaseMS;
+        this.playerTurnMS = playerTurnMS;
+        this.checkPrepPhaseMS = Math.max(this.prepPhaseMS - 1, 1);
+        this.checkPlayerTurnMS = Math.max(this.playerTurnMS - 1, 1);
+    }
+
+    hasUsers() {
+        return this.users.length > 0;
+    }
+
+    /**
+     *
+     * @param {string} uuid
+     * @returns
+     */
+    getPlayer(uuid) {
+        return this.uuidPlayerMap.get(uuid);
+    }
+
+    /**
+     *
+     * @param {Player} player
+     * @returns
+     */
+    getGrid(player) {
+        return this.playerGridMap.get(player);
     }
 
     /**
@@ -635,10 +668,6 @@ export class Game {
         });
     }
 
-    hasUsers() {
-        return this.users.length > 0;
-    }
-
     /**
      * @returns {Bot[]}
      */
@@ -654,7 +683,8 @@ export class Game {
      * @returns {Player[]}
      */
     createPlayers() {
-        return this.users.concat(this.bots).map((p) => {
+        //@ts-ignore
+        return this.users.concat(...this.bots).map((p) => {
             const player = new Player(p);
             this.uuidPlayerMap.set(player.getUUID(), player);
             return player;
@@ -681,39 +711,29 @@ export class Game {
     }
 
     /**
-     *
-     * @param {Player} player
-     * @returns
-     */
-    getGrid(player) {
-        return this.playerGridMap.get(player);
-    }
-
-    /**
      * Prints a visual representation of the grid for each player
      */
     printGrids() {
         for (const [player, grid] of this.playerGridMap.entries()) {
             console.log(`Grid for ${player.name}:`);
-            const visualGrid = grid.get()
-                .map((column) =>
-                    column.map((square) => {
-                        if (square.wasShot)
-                            return square.hasShipParts() ? "X" : "O";
-                        if (square.hasShipParts()) {
-                            const shipPart = [...square.shipParts][0];
-                            if (shipPart === shipPart.parent.head) {
-                                const face = shipPart.parent.face;
-                                if (face.x === 1 && face.y === 0) return "R";
-                                if (face.x === -1 && face.y === 0) return "L";
-                                if (face.x === 0 && face.y === 1) return "D";
-                                if (face.x === 0 && face.y === -1) return "U";
-                            }
-                            return "O";
+            const visualGrid = grid.get().map((column) =>
+                column.map((square) => {
+                    if (square.wasShot)
+                        return square.hasShipParts() ? "X" : "O";
+                    if (square.hasShipParts()) {
+                        const shipPart = [...square.shipParts][0];
+                        if (shipPart === shipPart.parent.head) {
+                            const face = shipPart.parent.face;
+                            if (face.x === 1 && face.y === 0) return "R";
+                            if (face.x === -1 && face.y === 0) return "L";
+                            if (face.x === 0 && face.y === 1) return "D";
+                            if (face.x === 0 && face.y === -1) return "U";
                         }
-                        return ".";
-                    })
-                )
+                        return "O";
+                    }
+                    return ".";
+                })
+            );
 
             const transposedGrid = visualGrid[0].map((_, colIdx) =>
                 visualGrid.map((row) => row[colIdx])
@@ -723,19 +743,18 @@ export class Game {
     }
 
     /**
-     * 
-     * @param {Player} player 
-     * @returns 
+     *
+     * @param {Player} player
+     * @returns
      */
-    randomizeShipLayout(player){
+    randomizeShipLayout(player) {
         const grid = this.getGrid(player);
         if (!grid) return false;
         const unoccupiedSquares = grid.getShuffledUnoccupiedSquares();
         if (unoccupiedSquares.length === 0) return false;
         for (const ship of player.fleet.ships) {
             if (!ship) continue;
-            if (!grid.placeShipRandomly(ship, unoccupiedSquares))
-                return false;
+            if (!grid.placeShipRandomly(ship, unoccupiedSquares)) return false;
         }
         return true;
     }
@@ -751,85 +770,181 @@ export class Game {
         console.log("Ship layouts randomized for players:", this.playerGridMap);
         return true;
     }
+
     /**
      * Prep grids with updated player ship head positions and faces, we can rebuild them with just that info
      */
     async prepPhase() {
-        const checkPrepTime = Math.max(this.prepPhaseTime-1, 1);
         const notReadyPlayers = new Set();
         const readyPlayers = new Set();
-        for (const player of this.players){
-            if (player.parent instanceof Bot){ // skip the bots for quicker prep
+        for (const player of this.players) {
+            if (player.parent instanceof Bot) {
+                // skip the bots for quicker prep
                 readyPlayers.add(player);
-            } else if (player.parent instanceof Player){
+            } else if (player.parent instanceof Player) {
                 notReadyPlayers.add(player);
             }
         }
-        let prep = new Promise((resolve, reject)=>{
+        let prep = new Promise((resolve, reject) => {
             console.log("Prep phase started");
 
-            const timeout = setTimeout(() => {  // set interval before forcing the next phase
-                clearInterval(interval);
-                console.log("Preparation phase ended. Proceeding to the game...");
-                reject("Force end prep phase");
-            }, this.prepPhaseTime);
-    
             
-            const checkIfPlayersIsPrepped = () => {
+
+            const playerReady = () => {
                 for (const player of notReadyPlayers) {
                     if (player.parent instanceof User) {
-                        console.log(`Checking ship layout for player: ${player.name}`);
-                        // logic to fetch and verify user ship data
-                        if (player.isReady()){
+                        console.log(
+                            `Checking ship layout for player: ${player.name}`
+                        );
+                        if (player.isReady()) {
                             readyPlayers.add(player);
                             notReadyPlayers.delete(player);
                             console.log(`Player ${player.name} is ready`);
                         }
-                    } else if (player.parent instanceof Bot){
+                    } else if (player.parent instanceof Bot) {
                         readyPlayers.add(player);
                     }
                 }
-                if (readyPlayers.size === this.players.length){
+                if (readyPlayers.size === this.players.length) {
                     clearTimeout(timeout);
-                    clearInterval(interval);
                     resolve("All players have prepped");
                 }
-            }
-            const interval = setInterval(checkIfPlayersIsPrepped, checkPrepTime);
+            };
+
+            const timeout = setTimeout(() => {
+                // set interval before forcing the next phase
+                console.log(
+                    "Preparation phase ended. Proceeding to the game..."
+                );
+                reject("Force end prep phase");
+            }, this.prepPhaseMS);
         });
         await prep;
+        return prep;
     }
 
-    
+    /**
+     * Gets a random players grid
+     * @param {Function} conditionCallback Provide a callback to check conditions on each player
+     */
+    async getRandomPlayerGrid(conditionCallback, timeout = 1000) {
+        const fn = () => {
+            let player;
+            while (!player) {
+                const rand =
+                    this.players[
+                        Math.floor(Math.random() * this.players.length)
+                    ];
+                if (!conditionCallback(rand)) continue;
+                else player = rand;
+            }
+            return player;
+        };
+    }
+
+    /**
+     * Strikes the **pos** on the grid of the **Player** that has the **uuid**
+     * @param {string} uuid
+     * @param {Vector2} pos
+     * @returns {boolean}
+     */
+    attackPlayerAtPos(uuid, pos) {
+        if (
+            !pos ||
+            !uuid ||
+            !(pos instanceof Vector2) ||
+            !(typeof pos.x === "number" && typeof pos.y === "number") ||
+            typeof uuid !== "string"
+        )
+            return false;
+
+        const player = this.getPlayer(uuid);
+        if (!player) throw new Error("Player does not exist");
+
+        const grid = this.getGrid(player);
+        if (!grid) throw new Error("Player does not have grid");
+
+        const result = grid.attackPos(pos);
+        if (result) return true;
+        else return true;
+    }
+
+    /**
+     *
+     * @param {Player} player
+     * @param {LinkedListQueue} queue
+     */
+    async playerTurn(player, queue) {
+        try {
+            /**
+             * @type {Object}
+             */
+            const playerInput = (async () => {
+                if (player.parent instanceof User) {
+                    let promiseOfPlayerInput = new Promise(
+                        (resolve, reject) => {
+                            const interval = setInterval(() => {
+                                if (
+                                    !(
+                                        attackPos &&
+                                        typeof attackPos.x === "number" &&
+                                        typeof attackPos.y === "number"
+                                    )
+                                )
+                                    return;
+                                const attackTargetID =
+                                    player.getAttackTargetID();
+                                if (
+                                    !(
+                                        attackTargetID &&
+                                        typeof attackTargetID === "string"
+                                    )
+                                )
+                                    return;
+                                clearInterval(interval);
+                                resolve({ attackTargetID, attackPos });
+                            }, this.playerTurnMS / 5 + 1);
+
+                            const timeout = setTimeout(() => {
+                                clearInterval(interval);
+                                reject("Player took too long");
+                            }, this.playerTurnMS);
+                        }
+                    );
+                    await promiseOfPlayerInput;
+                    return promiseOfPlayerInput;
+                } else if (player.parent instanceof Bot) {
+                    // dont need to await because its just running a func on the bot itself
+
+                    const attackPos = null; // get a random attack pos from bot but need to specify a random players grid
+                    if (!attackPos) throw new Error("Bot was unable to attack");
+                    this.attackPlayerAtPos(player.getUUID(), attackPos);
+                }
+            })();
+            await playerInput;
+            return playerInput;
+        } catch (error) {
+            console.log(error.message);
+            return error.message;
+        }
+    }
+
     /**
      * loop where the game will run
      */
     async playPhase() {
-        let queue = new LinkedListQueue();
-        for (const player of this.players){
+        const queue = new LinkedListQueue();
+        for (const player of this.players) {
             queue.enqueue(player);
         }
-        let curPlayer;
-        let play = new Promise(async (resolve, reject) => {
-            curPlayer = queue.dequeue();
-            queue.enqueue(curPlayer);
-            const playerInput = new Promise((playerResolve,playerReject)=>{
-                setTimeout(()=>{playerReject("Player took too long")}, this.playerTurnLength);
-                if (curPlayer.parent instanceof Bot){
-                }
-            });
-            await playerInput;
-            if (curPlayer.parent instanceof Bot) {
-                // await curPlayer.fire();
-            } else if (curPlayer.parent instanceof User) {
-                //await DOM.getPlayerStrikePos(curPlayer);
-            }
-            
-        });
-        await play;
+        while (queue.size() > 0) {
+            let player = queue.dequeue();
+            queue.enqueue(player);
+            this.playerTurn(player, queue);
+        }
     }
 
-    startGame() {
+    async startGame() {
         console.log("Starting game...");
         //DOM.loadUsers();
         console.log("Players:", this.players);
@@ -838,7 +953,8 @@ export class Game {
         this.randomizeShipLayouts();
 
         this.printGrids();
-        this.prepPhase();
+        await this.prepPhase();
+        await this.playPhase();
         // await this.gameLoop(0);
         // end game loop
     }

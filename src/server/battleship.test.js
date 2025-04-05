@@ -1,5 +1,5 @@
 import { Grid, Player, User, Ship, Battleship, Game } from "./battleship.mjs";
-import { Vector2 } from "./vector2.mjs";
+import Vector2 from "./vector2.mjs";
 
 describe("Ships", () => {
     /**
@@ -135,27 +135,26 @@ describe("Game", () => {
      * @type {Game}
      */
     let game;
+    /**
+         * @type {Grid}
+         */
+    let grid;
+    /**
+     * @type {Ship}
+     */
+    let ship;
     beforeEach(() => {
         game = new Game(mainUser, amtOfBots, gridSize, randomizeLayouts);
+        
+        grid = game.grids[0];
+
+        const length = gridSize;
+        const face = new Vector2(1, 0);
+        const shouldCreateParts = true;
+        ship = new Ship(length, face, shouldCreateParts);
     });
 
     describe("Ship Placement", () => {
-        /**
-         * @type {Grid}
-         */
-        let grid;
-        /**
-         * @type {Ship}
-         */
-        let ship;
-        beforeEach(() => {
-            grid = game.grids[0];
-
-            const length = gridSize;
-            const face = new Vector2(1, 0);
-            const shouldCreateParts = true;
-            ship = new Ship(length, face, shouldCreateParts);
-        });
         test("places ship", () => {
             const pos = new Vector2(gridSize - 1, 0);
             grid.placeShip(ship, pos);
@@ -190,5 +189,9 @@ describe("Game", () => {
             }
             expect(square.shipParts.size === 1).toBe(true);
         });
+    });
+
+    describe("Striking",()=>{
+        
     });
 });
