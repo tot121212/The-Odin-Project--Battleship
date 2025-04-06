@@ -6,6 +6,6 @@ const wss = new WebSocketServer({port : port});
 wss.on('connection', ws => {
     ws.on('message', message => {
         console.log(message.toString());
-        ws.send("Hello client");
+        ws.send("We got websockets baybee");
     });
 });
