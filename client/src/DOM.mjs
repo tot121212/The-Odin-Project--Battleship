@@ -1,32 +1,31 @@
-import Vector2 from "../server/vector2.mjs";
-import { Game, Player, Grid, Square } from "./battleship.mjs";
+import Vector2 from "../../server/vector2.mjs";
 import Images from "./ImageImporter.mjs";
 
 export class DOM {
     constructor() {
         /**
-         * @type {Game}
+         * @type {Object|null}
          */
-        this.CurGame = null;
+        this.gameData = null;
         /**
          * @type {Set}
          */
-        this.Grids = new Set();
+        this.grids = new Set();
         /**
          * @type {Element|null}
          */
-        this.Content = document.querySelector(".content");
+        this.content = document.querySelector(".content");
     }
 
-    setCurGame(game){
-        this.CurGame = game;
+    setgameData(gameData){
+        this.gameData = gameData;
     }
 
     onStartGame(e){
         const startButton = e.target;
         // @ts-ignore
         startButton.classList.add("hidden");
-        this.CurGame.startGame();
+        this.gameData.startGame();
         this.updateGrids();
         document.querySelector(".grids")?.classList.remove("hidden");
         console.log("DOM: Started game");
@@ -42,7 +41,7 @@ export class DOM {
         if (!userID) throw new Error("No userID found");
         const layout = document.querySelector(`.grid[data-user-id=${userID}]`);
         if (!layout) throw new Error("Layout not found for user");
-        //this.CurGame.submitShipLayout(layout, userID);
+        //this.game.submitShipLayout(layout, userID);
         // confirm that ship pos and faces are valid
         // wipe grid and replace ships with faces
     }
@@ -56,7 +55,7 @@ export class DOM {
             if (!Number.isInteger(num)) console.error("Pos x or y is not a number");
         }
         // supposed to simulate api call
-        const result = this.CurGame.strikePos(new Vector2(posAsArr[0],posAsArr[1]), playerID);
+        const result = this.gameData.strikePos(new Vector2(posAsArr[0],posAsArr[1]), playerID);
         if (typeof result === "string"){
             console.log(result);
             return false;
@@ -69,13 +68,13 @@ export class DOM {
         const newGridsContainer = this.createGridContainer();
         if (!newGridsContainer)
             throw new Error("HTML: Grids failed to initialize");
-        this.Content?.append(newGridsContainer);
-        this.Content?.addEventListener("click", (e) => {
+        this.content?.append(newGridsContainer);
+        this.content?.addEventListener("click", (e) => {
             if (!e?.target) return;
             if (!(e.target instanceof Element)) return;
 
             if (e.target.classList.contains("start-game")) {
-                if (!this.CurGame.hasUsers()) return;
+                if (!this.gameData.hasUsers()) return;
                 this.onStartGame(e);
             }
 
@@ -127,7 +126,7 @@ export class DOM {
 
     /**
      * Creates grid element for provided grid, associating it with the given player
-     * @param {Grid} grid
+     * @param {Object} grid
      * @param {string} playerID
      * @returns {Element|null}
      */
@@ -147,18 +146,17 @@ export class DOM {
     }
 
     /**
-     * Initializes grids for the game passed as an argument, then returns the gridContainer created
+     * Initializes grids for the gameData passed as an argument, then returns the gridContainer created
      * @returns {Element}
      */
     createGridContainer() {
         const gridContainer = document.createElement("div");
         gridContainer.classList.add("grids");
-        for (const entry of this.CurGame.playerGridMap.entries()) {
-            /** @type {[Player, Grid]} */
+        for (const entry of this.gameData.playerGridMap.entries()) {
             const [player, grid] = entry;
             const gridElement = DOM.createGrid(grid, player.getUUID());
             if (!gridElement) throw new Error("Grid was not creatable");
-            this.Grids.add(gridElement);
+            this.grids.add(gridElement);
             gridContainer.append(gridElement);
         }
         if (!(gridContainer.children.length > 0))
@@ -170,7 +168,7 @@ export class DOM {
     /**
      *
      * @param {HTMLButtonElement} squareElement
-     * @param {Square|null} square
+     * @param {Object|null} square
      */
     static fillSquareData(squareElement, square) {
         if (!squareElement) throw new Error("HTML Square does not exist");
@@ -277,13 +275,13 @@ export class DOM {
      * Updates the grid based on whether it hasShipParts() or wasShot
      */
     updateGrids() {
-        for (const gridElement of this.Grids) {
+        for (const gridElement of this.grids) {
             // DO NOT DO THIS
             // SEND A REQUEST TO GAME TO GET UPDATED SQUARE INFORMATION AT A PER INDEX BASIS
             // THE GAME SHOULD HANDLE WHAT DATA HAS BEEN CHANGED OR NOT AND
             // SEND YOU ONLY THE SQUARES THAT ACTUALLY NEED TO BE UPDATED
-            const player = this.CurGame.uuidPlayerMap.get(gridElement.dataset.playerID);
-            const grid = this.CurGame.playerGridMap.get(player);
+            const player = this.gameData.uuidPlayerMap.get(gridElement.dataset.playerID);
+            const grid = this.gameData.playerGridMap.get(player);
             if (!player || !grid)
                 throw new Error("Player or Grid no longer exist");
             for (const columnElement of gridElement.children) {
@@ -306,7 +304,7 @@ export class DOM {
     }
 
     static async getPlayerStrikePos() {
-        // await post request that player sends to continue game, strikePos
+        // await post request that player sends to continue gameData, strikePos
         // verify strikePos is a array with two elements
         return;
     }

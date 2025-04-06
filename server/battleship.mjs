@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
 
-import { DOM } from "../app/DOM.mjs";
 import LinkedListQueue from "./llq.mjs";
 
 import { Chance } from "chance";
@@ -788,8 +787,6 @@ export class Game {
         let prep = new Promise((resolve, reject) => {
             console.log("Prep phase started");
 
-            
-
             const playerReady = () => {
                 for (const player of notReadyPlayers) {
                     if (player.parent instanceof User) {
@@ -883,17 +880,17 @@ export class Game {
                 if (player.parent instanceof User) {
                     let promiseOfPlayerInput = new Promise(
                         (resolve, reject) => {
+                            const attackPos = {x:null,y:null};
                             const interval = setInterval(() => {
                                 if (
                                     !(
                                         attackPos &&
-                                        typeof attackPos.x === "number" &&
+                                        typeof attackPos?.x === "number" &&
                                         typeof attackPos.y === "number"
                                     )
                                 )
                                     return;
-                                const attackTargetID =
-                                    player.getAttackTargetID();
+                                const attackTargetID = null;
                                 if (
                                     !(
                                         attackTargetID &&

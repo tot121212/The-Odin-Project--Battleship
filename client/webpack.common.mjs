@@ -15,6 +15,7 @@ export default {
     filename: '[name].bundle.mjs',
     path: path.resolve(__dirname, 'dist'),
     clean: true,
+    publicPath: '/',
   },
 
   plugins: [
