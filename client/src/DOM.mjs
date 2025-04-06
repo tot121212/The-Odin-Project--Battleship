@@ -17,7 +17,7 @@ export class DOM {
         this.content = document.querySelector(".content");
     }
 
-    setgameData(gameData){
+    setGameData(gameData){
         this.gameData = gameData;
     }
 
