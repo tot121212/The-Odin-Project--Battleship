@@ -40,7 +40,6 @@ const DIRECTION = {
 // node representing a square of a ship
 export class ShipPart {
     /**
-     *
      * @param {Ship} parent
      */
     constructor(parent) {
@@ -58,7 +57,6 @@ export class ShipPart {
 // ship thats part of a fleet
 export class Ship {
     /**
-     *
      * @param {number} length
      * @param {Vector2} face
      * @param {boolean} shouldCreateParts
@@ -84,7 +82,6 @@ export class Ship {
     }
 
     /**
-     *
      * @param {number} length
      */
     createParts(length) {
@@ -127,7 +124,6 @@ export class Ship {
     }
 
     /**
-     *
      * @param {ShipPart} part
      */
     hit(part) {
@@ -174,7 +170,6 @@ export class Destroyer extends Ship {
 
 export class Fleet {
     /**
-     *
      * @param {Ship[]} ships
      */
     constructor(
@@ -192,7 +187,6 @@ export class Fleet {
 
 export class Square {
     /**
-     *
      * @param {Vector2|undefined} pos
      */
     constructor(pos) {
@@ -218,7 +212,6 @@ export class Square {
     }
 
     /**
-     *
      * @param {ShipPart} part
      */
     addShipPart(part) {
@@ -226,7 +219,6 @@ export class Square {
     }
 
     /**
-     *
      * @param {ShipPart} part
      */
     removeShipPart(part) {
@@ -234,7 +226,6 @@ export class Square {
     }
 
     /**
-     *
      * @returns {boolean} Returns whether the square was shot already or not
      */
     attack() {
@@ -249,7 +240,6 @@ export class Square {
 
 export class Grid {
     /**
-     *
      * @param {number} gridSize
      */
     constructor(gridSize) {
@@ -455,7 +445,6 @@ export class Grid {
     }
 
     /**
-     *
      * @param {Vector2} pos
      * @returns {boolean} Returns whether the square
      */
@@ -500,7 +489,6 @@ export class Grid {
     }
 
     /**
-     *
      * @returns {boolean}
      */
     attackRandomly() {
@@ -516,7 +504,6 @@ export class Grid {
 
 export class User {
     /**
-     *
      * @param {string} name
      */
     constructor(name, uuid = uuidv4()) {
@@ -533,7 +520,6 @@ export class User {
 
 export class Bot {
     /**
-     *
      * @param {string} name
      */
     constructor(name) {
@@ -544,7 +530,6 @@ export class Bot {
 export class Player {
     // player is only used when a game starts so it doesnt inherit nor become inherited either
     /**
-     *
      * @param {User|Bot} parent
      */
 
@@ -577,7 +562,6 @@ export class Player {
     }
 
     /**
-     *
      * @param {boolean} bool
      */
     setReady(bool) {
@@ -591,25 +575,25 @@ export class Player {
 
 export class Game {
     /**
-     * @param {User} host Main user of game
+     * @param {User[]} initialUsers Main user of game
      * @param {number} amtOfBots Amount of bot players
      * @param {number} gridSize Size of grid as a num, x * x
      * @param {boolean} randomize Should the ship layouts be randomized at start
+     * @param {number} prepPhaseMS
+     * @param {number} playerTurnMS
      */
     constructor(
-        host,
+        initialUsers = [],
         amtOfBots = 1,
         gridSize = 10,
         randomize = true,
         prepPhaseMS = 20000,
         playerTurnMS = 10000
     ) {
-        this.host = host;
-
         this.gridSize = gridSize;
         this.randomize = randomize;
 
-        this.users = [host];
+        this.users = [...initialUsers];
         this.amtOfBots = amtOfBots;
         this.bots = this.createBots();
 
@@ -632,7 +616,6 @@ export class Game {
     }
 
     /**
-     *
      * @param {string} uuid
      * @returns
      */
@@ -641,7 +624,6 @@ export class Game {
     }
 
     /**
-     *
      * @param {Player} player
      * @returns
      */
@@ -684,6 +666,7 @@ export class Game {
     createPlayers() {
         //@ts-ignore
         return this.users.concat(...this.bots).map((p) => {
+            if (!p) return;
             const player = new Player(p);
             this.uuidPlayerMap.set(player.getUUID(), player);
             return player;
@@ -697,7 +680,6 @@ export class Game {
     createGrids() {
         return this.players.map(
             /**
-             *
              * @param {Player} player
              * @returns
              */
@@ -742,7 +724,6 @@ export class Game {
     }
 
     /**
-     *
      * @param {Player} player
      * @returns
      */
@@ -867,7 +848,6 @@ export class Game {
     }
 
     /**
-     *
      * @param {Player} player
      * @param {LinkedListQueue} queue
      */
@@ -941,7 +921,8 @@ export class Game {
         }
     }
 
-    async startGame() {
+    async start() {
+        this.isStarted = true;
         console.log("Starting game...");
         //DOM.loadUsers();
         console.log("Players:", this.players);
