@@ -17,11 +17,11 @@ export class DOM {
         this.content = document.querySelector(".content");
     }
 
-    setGameData(gameData){
+    setGameData(gameData) {
         this.gameData = gameData;
     }
 
-    onStartGame(e){
+    onStartGame(e) {
         const startButton = e.target;
         // @ts-ignore
         startButton.classList.add("hidden");
@@ -30,7 +30,7 @@ export class DOM {
         console.log("DOM: Started game");
     }
 
-    onSubmitShipLayout(e){
+    onSubmitShipLayout(e) {
         /**
          * @type {HTMLDivElement|null}
          */
@@ -45,17 +45,22 @@ export class DOM {
         // wipe grid and replace ships with faces
     }
 
-    onStrikeSquare(e){
+    onStrikeSquare(e) {
         const playerID = e.target.closest(".grid").dataset.playerID;
         const squarePos = e.target.dataset.idx;
         const posAsArr = squarePos.split(",").map(Number);
-        if (posAsArr.length !== 2) console.error("Strike pos has invalid amt of args");
-        for (const num of posAsArr){
-            if (!Number.isInteger(num)) console.error("Pos x or y is not a number");
+        if (posAsArr.length !== 2)
+            console.error("Strike pos has invalid amt of args");
+        for (const num of posAsArr) {
+            if (!Number.isInteger(num))
+                console.error("Pos x or y is not a number");
         }
         // supposed to simulate api call
-        const result = this.gameData.strikePos(new Vector2(posAsArr[0],posAsArr[1]), playerID);
-        if (typeof result === "string"){
+        const result = this.gameData.strikePos(
+            new Vector2(posAsArr[0], posAsArr[1]),
+            playerID
+        );
+        if (typeof result === "string") {
             console.log(result);
             return false;
         } else {
@@ -75,39 +80,31 @@ export class DOM {
             if (e.target.classList.contains("start-game")) {
                 if (!this.gameData.hasUsers()) return;
                 this.onStartGame(e);
-            }
-
-            else if (e.target.classList.contains("submit-ship-layout")){
+            } else if (e.target.classList.contains("submit-ship-layout")) {
                 if (!(e.target instanceof HTMLButtonElement)) return;
                 this.onSubmitShipLayout(e);
-            }
-
-            else if (e.target.classList.contains("square")) {
+            } else if (e.target.classList.contains("square")) {
                 this.onStrikeSquare(e);
             }
         });
     }
 
     /**
-     * @param {number} colIdx 
-     * @param {number} rowIdx 
-     * @returns 
+     * @param {number} colIdx
+     * @param {number} rowIdx
+     * @returns
      */
-    static createSquare(colIdx, rowIdx){
+    static createSquare(colIdx, rowIdx) {
         const squareElement = document.createElement("button");
-        squareElement.classList.add(
-            "square",
-            "grabbable",
-            "img-container"
-        );
+        squareElement.classList.add("square", "grabbable", "img-container");
         squareElement.dataset.idx = rowIdx.toString() + "," + colIdx.toString();
         DOM.drawSquare(squareElement);
-        
+
         return squareElement;
     }
 
     /**
-     * 
+     *
      * @param {*} column
      * @param {number} colIdx
      */
@@ -140,7 +137,7 @@ export class DOM {
             gridElement.append(this.createColumn(column, colIdx));
             colIdx += 1;
         }
-        
+
         return gridElement;
     }
 
@@ -279,7 +276,9 @@ export class DOM {
             // SEND A REQUEST TO GAME TO GET UPDATED SQUARE INFORMATION AT A PER INDEX BASIS
             // THE GAME SHOULD HANDLE WHAT DATA HAS BEEN CHANGED OR NOT AND
             // SEND YOU ONLY THE SQUARES THAT ACTUALLY NEED TO BE UPDATED
-            const player = this.gameData.uuidPlayerMap.get(gridElement.dataset.playerID);
+            const player = this.gameData.uuidPlayerMap.get(
+                gridElement.dataset.playerID
+            );
             const grid = this.gameData.playerGridMap.get(player);
             if (!player || !grid)
                 throw new Error("Player or Grid no longer exist");

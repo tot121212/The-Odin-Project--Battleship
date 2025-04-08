@@ -2,10 +2,7 @@ import WebSocket, { WebSocketServer } from "ws";
 import { Worker } from "worker_threads";
 import { port } from "../shared/websocket.config.mjs";
 import { v4 as uuidv4 } from "uuid";
-import {
-    SESSION_ACTIONS,
-    USER_ACTIONS,
-} from "../shared/enums.mjs";
+import { SESSION_ACTIONS, USER_ACTIONS } from "../shared/enums.mjs";
 
 const sessionWorkerURL = new URL("./sessionWorker.mjs");
 
@@ -76,26 +73,27 @@ class ClientActionHandler {
     static onStartGame = (clientData) => {
         const sessionID = createSession();
         const clientID = clientData.clientID;
-        if (typeof sessionID !== "string" || typeof clientID !== "string") return;
+        if (typeof sessionID !== "string" || typeof clientID !== "string")
+            return;
 
         sendToSession(sessionID, USER_ACTIONS.JOIN_GAME, clientData); // send host data to new session
     };
 
     static handlers = {
-        startGame: ClientActionHandler.onStartGame
-    }
+        startGame: ClientActionHandler.onStartGame,
+    };
 
     /**
-     * @param {string} action 
-     * @param {object} clientData 
+     * @param {string} action
+     * @param {object} clientData
      */
-    static handleAction = (action, clientData)=>{
-        if (ClientActionHandler.handlers[action]){
+    static handleAction = (action, clientData) => {
+        if (ClientActionHandler.handlers[action]) {
             ClientActionHandler.handlers[action](clientData);
         } else {
             console.error("Action not found");
         }
-    }
+    };
 }
 
 /**
