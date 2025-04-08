@@ -611,6 +611,24 @@ export class Game {
         this.checkPlayerTurnMS = Math.max(this.playerTurnMS - 1, 1);
     }
 
+    /**
+     * Reset game board after a finished session
+     */
+    reset() {
+        this.grids.forEach((grid) => {
+            grid.get().forEach((row) => {
+                row.forEach((sqr) => {
+                    sqr.reset();
+                });
+            });
+        });
+        this.players.forEach((player) => {
+            player.fleet.ships.forEach((ship) => {
+                ship.reset();
+            });
+        });
+    }
+
     hasUsers() {
         return this.users.length > 0;
     }
@@ -629,24 +647,6 @@ export class Game {
      */
     getGrid(player) {
         return this.playerGridMap.get(player);
-    }
-
-    /**
-     * Reset game board after a finished session
-     */
-    reset() {
-        this.grids.forEach((grid) => {
-            grid.get().forEach((row) => {
-                row.forEach((sqr) => {
-                    sqr.reset();
-                });
-            });
-        });
-        this.players.forEach((player) => {
-            player.fleet.ships.forEach((ship) => {
-                ship.reset();
-            });
-        });
     }
 
     /**
@@ -860,8 +860,8 @@ export class Game {
                 if (player.parent instanceof User) {
                     let promiseOfPlayerInput = new Promise(
                         (resolve, reject) => {
-                            const attackPos = {x:null,y:null};
                             const interval = setInterval(() => {
+                                const attackPos = { x: null, y: null };
                                 if (
                                     !(
                                         attackPos &&
