@@ -25,7 +25,6 @@ export class DOM {
         const startButton = e.target;
         // @ts-ignore
         startButton.classList.add("hidden");
-        this.gameData.startGame();
         this.updateGrids();
         document.querySelector(".grids")?.classList.remove("hidden");
         console.log("DOM: Started game");
