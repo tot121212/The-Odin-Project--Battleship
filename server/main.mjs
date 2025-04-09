@@ -58,7 +58,7 @@ class Session {
      */
     static staticSend = (sessionID, json) => {
         if (!(typeof sessionID === "string") || !(json instanceof Object))
-            throw new Error("SessionID and/or JSON is/are not valid");
+            throw new Error("sessionID and/or JSON is/are not valid");
 
         const session = Session.#IDToSessionMap.get(sessionID);
         if (!session) throw new Error("Session no longer exists");
@@ -77,9 +77,9 @@ class Session {
 
 class Client {
     /**
-     * @param {WebSocket} ws 
+     * @param {WebSocket} ws
      */
-    constructor(ws, token = uuidv4()){
+    constructor(ws, token = uuidv4()) {
         this.ws = ws;
         this.token = token;
         Client.TokenToClientMap.set(token, this);
@@ -104,14 +104,14 @@ class Client {
 
     /**
      * Sends json to client by token
-     * @param {string} token
+     * @param {string} clientToken
      * @param {object} json
      */
-    static staticSend = (token, json) => {
-        if (!(typeof token === "string") || !(json instanceof Object))
+    static staticSend = (clientToken, json) => {
+        if (!(typeof clientToken === "string") || !(json instanceof Object))
             throw new Error("Client.Token and/or JSON is/are not valid");
 
-        const client = Client.TokenToClientMap.get(token);
+        const client = Client.TokenToClientMap.get(clientToken);
         if (!client) throw new Error("Session no longer exists");
 
         client.ws.send(JSON.stringify(json));
@@ -201,9 +201,13 @@ class ClientRouter {
         client.ws.on("close", onClose);
     };
 }
+
 // Route session to client
 class SessionRouter {
-    
+    static onMessage = (json) => {
+        // which client does this json need to go to
+        // send to that client
+    };
 }
 
 wss.on("connection", ClientRouter.onConnection);
