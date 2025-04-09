@@ -13,7 +13,7 @@ class Session {
     /**
      * @type {Map<string, Session>}
      */
-    static IDToSessionMap = new Map(); // sessionID to session, sessionID is to be passed to workers
+    static #IDToSessionMap = new Map(); // sessionID to session, sessionID is to be passed to workers
 
     /**
      * @param {string} sessionID
@@ -22,7 +22,7 @@ class Session {
     constructor(sessionID = uuidv4(), worker = new Worker(sessionWorkerURL)) {
         this.worker = worker;
         this.sessionID = sessionID;
-        Session.IDToSessionMap.set(sessionID, this);
+        Session.#IDToSessionMap.set(sessionID, this);
     }
 
     /**
@@ -30,7 +30,7 @@ class Session {
      * @param {string} sessionID
      */
     static deleteByID = (sessionID) => {
-        Session.IDToSessionMap.delete(sessionID);
+        Session.#IDToSessionMap.delete(sessionID);
     };
 
     destroy() {
@@ -46,7 +46,7 @@ class Session {
         if (!(typeof sessionID === "string") || !(json instanceof Object))
             throw new Error("SessionID and/or JSON is/are not valid");
 
-        const session = Session.IDToSessionMap.get(sessionID);
+        const session = Session.#IDToSessionMap.get(sessionID);
         if (!session) throw new Error("Session no longer exists");
 
         session.worker.postMessage(json);
@@ -181,6 +181,7 @@ class ClientRouter {
 }
 // Route session to client
 class SessionRouter {
+    
 }
 
 wss.on("connection", ClientRouter.onConnection);
