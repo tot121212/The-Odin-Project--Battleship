@@ -2,138 +2,185 @@ import WebSocket, { WebSocketServer } from "ws";
 import { Worker } from "worker_threads";
 import { port } from "../shared/websocket.config.mjs";
 import { v4 as uuidv4 } from "uuid";
-import { SESSION_ACTIONS, USER_ACTIONS } from "../shared/enums.mjs";
+import { SERVER_ACTION, CLIENT_ACTION } from "../shared/enums.mjs";
+import assert, { ok } from "assert";
 
 const sessionWorkerURL = new URL("./sessionWorker.mjs");
 
 const wss = new WebSocketServer({ port });
 
-/**
- * @type {Map<string, WebSocket>}
- */
-const clients = new Map(); // clientID to client, clientID is to be passed to workers
-
-/**
- * @type {Map<string, Worker>}
- */
-const sessions = new Map(); // sessionID to session, sessionID is to be passed to workers
-
-/**
- * Creates a new session and returns the sessionID
- * @param {Worker} worker
- * @param {string} sessionID
- * @returns {String} sessionID
- */
-const createSession = (
-    worker = new Worker(sessionWorkerURL),
-    sessionID = uuidv4()
-) => {
-    sessions.set(sessionID, worker);
-    if (!worker || !sessionID) throw new Error("Session could not be created");
-    return sessionID;
-};
-
-/**
- * Deletes session from map using its ID
- * @param {string} sessionID
- */
-const deleteSession = (sessionID) => {
-    sessions.delete(sessionID);
-};
-
-/**
- * @param {string} sessionID
- * @param {string} action
- * @param {object} clientData
- */
-const sendToSession = (sessionID, action, clientData) => {
-    const session = sessions.get(sessionID);
-    if (!session) throw new Error("Session no longer exists");
-
-    session.postMessage({ client: { [action]: clientData } });
-};
-
-/**
- * @param {string} clientID
- * @param {string} action
- * @param {object} sessionData
- */
-const sendToClient = (clientID, action, sessionData) => {
-    const client = clients.get(clientID);
-    if (!client) throw new Error("Client no longer exists");
-
-    client.send(JSON.stringify({ server: { [action]: sessionData } }));
-};
-
-class ClientActionHandler {
+class Session {
     /**
-     * Creates a new session and connects the initial client
-     * @param {object} clientData
+     * @type {Map<string, Session>}
      */
-    static onStartGame = (clientData) => {
-        const sessionID = createSession();
-        const clientID = clientData.clientID;
-        if (typeof sessionID !== "string" || typeof clientID !== "string")
-            return;
+    static IDToSessionMap = new Map(); // sessionID to session, sessionID is to be passed to workers
 
-        sendToSession(sessionID, USER_ACTIONS.JOIN_GAME, clientData); // send host data to new session
+    /**
+     * @param {string} sessionID
+     * @param {Worker} worker
+     */
+    constructor(sessionID = uuidv4(), worker = new Worker(sessionWorkerURL)) {
+        this.worker = worker;
+        this.sessionID = sessionID;
+        Session.IDToSessionMap.set(sessionID, this);
+    }
+
+    /**
+     * Deletes session from map using its ID
+     * @param {string} sessionID
+     */
+    static deleteByID = (sessionID) => {
+        Session.IDToSessionMap.delete(sessionID);
     };
 
-    static handlers = {
-        startGame: ClientActionHandler.onStartGame,
+    destroy() {
+        Session.deleteByID(this.sessionID);
+    }
+
+    /**
+     * Sends json to session by ID
+     * @param {string} sessionID
+     * @param {object} json
+     */
+    static staticSend = (sessionID, json) => {
+        if (!(typeof sessionID === "string") || !(json instanceof Object))
+            throw new Error("SessionID and/or JSON is/are not valid");
+
+        const session = Session.IDToSessionMap.get(sessionID);
+        if (!session) throw new Error("Session no longer exists");
+
+        session.worker.postMessage(json);
     };
 
     /**
-     * @param {string} action
-     * @param {object} clientData
+     * Sends json to session
+     * @param {object} json
      */
-    static handleAction = (action, clientData) => {
-        if (ClientActionHandler.handlers[action]) {
-            ClientActionHandler.handlers[action](clientData);
-        } else {
-            console.error("Action not found");
-        }
+    send = (json) => {
+        this.worker.postMessage(json);
     };
 }
 
-/**
- * Parses json from client and sends to appropriate handler with the action specified
- * This way we can send signals to existing games and start new ones without issues
- * @param {object} clientID
- * @param {object} json
- */
-const onJSON = (clientID, json) => {
-    if (!json || typeof json !== "object") return; // cant do anything without json
+class Client {
+    /**
+     * @param {WebSocket} ws 
+     */
+    constructor(ws, token = uuidv4()){
+        this.ws = ws;
+        this.token = token;
+        Client.TokenToClientMap.set(token, this);
+    }
 
-    const { data, action } = json; // destructure data from json
-    if (!data || !action) return;
+    /**
+     * @type {Map<string, Client>}
+     */
+    static TokenToClientMap = new Map(); // clientToken to client, clientToken is to be passed to workers
 
-    const clientData = { clientID, ...data }; // reconstruct including the clientID
+    /**
+     * Deletes client from map using its token
+     * @param {string} token
+     */
+    static deleteByToken = (token) => {
+        Client.TokenToClientMap.delete(token);
+    };
 
-    ClientActionHandler.handleAction(action, clientData);
-};
+    destroy() {
+        Client.deleteByToken(this.token);
+    }
 
-wss.on("connection", (client) => {
-    const clientID = uuidv4();
-    clients.set(clientID, client);
+    /**
+     * Sends json to client by token
+     * @param {string} token
+     * @param {object} json
+     */
+    static staticSend = (token, json) => {
+        if (!(typeof token === "string") || !(json instanceof Object))
+            throw new Error("Client.Token and/or JSON is/are not valid");
 
-    client.on("message", (buffer) => {
-        if (!(buffer && buffer instanceof Buffer))
-            throw new Error("Buffer is not valid");
+        const client = Client.TokenToClientMap.get(token);
+        if (!client) throw new Error("Session no longer exists");
 
-        const message = buffer.toString();
-        if (!(message && typeof message === "string"))
-            throw new Error("Message is not valid");
+        client.ws.send(JSON.stringify(json));
+    };
 
-        const json = JSON.parse(message);
-        if (!(json && json instanceof Object))
-            throw new Error("JSON parse is not valid");
+    /**
+     * @param {object} json
+     */
+    send = (json) => {
+        Client.staticSend(this.token, json);
+    };
+}
 
-        onJSON(clientID, json);
-    });
 
-    wss.on("close", () => {
-        // clear client from db
-        clients.delete(clientID); // deref client in clients list
-    });
-});
+// Route client to session
+class ClientRouter {
+    /**
+     * @param {WebSocket} ws
+     */
+    static onConnection = (ws) => {
+        const client = new Client(ws);
+        /**
+         * @param {any} buffer
+         */
+        const onMessage = (buffer) => {
+            if (!(buffer && buffer instanceof Buffer))
+                throw new Error("Buffer is not valid");
+
+            const message = buffer.toString();
+            if (!(message && typeof message === "string"))
+                throw new Error("Message is not valid");
+
+            const json = JSON.parse(message);
+            if (!(json && json instanceof Object))
+                throw new Error("JSON parse is not valid");
+
+            if (json.type !== "ClientMessage")
+                throw new Error("JSON is not a client message");
+
+            // validate here
+
+            json.data.token = client.token; // add clients token to json
+
+            // we should now have json that looks like this
+            // { type:"newGame", data:{clientToken, sessionID, data}}
+
+            switch (json.type) {
+                case CLIENT_ACTION.NEW_GAME:
+                    /**
+                     * @param {Object} json
+                     */
+                    const onClientNewSession = (json) => {
+                        const hostClientData = json.data;
+                        if (
+                            typeof hostClientData.clientToken !== "string" ||
+                            !(hostClientData.data instanceof Object)
+                        )
+                            throw new Error(
+                                "Host client data does not contain adequate information to create a session"
+                            );
+
+                        const session = new Session();
+                        session.send(json);
+                        // session should trigger event listener on main for sessionResponses;
+                    };
+                    onClientNewSession(json);
+                    break;
+
+                default:
+                    //onClientMessage(json);
+                    break;
+            }
+        };
+        client.ws.on("message", onMessage);
+
+        const onClose = () => {
+            client.destroy();
+        };
+        client.ws.on("close", onClose);
+    };
+}
+// Route session to client
+class SessionRouter {
+}
+
+wss.on("connection", ClientRouter.onConnection);

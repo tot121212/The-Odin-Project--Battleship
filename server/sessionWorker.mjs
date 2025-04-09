@@ -1,5 +1,5 @@
 import { parentPort, workerData } from 'worker_threads';
-
+import { SERVER_ACTION, CLIENT_ACTION} from "../shared/enums.mjs";
 import {Game} from "./battleship.mjs";
 
 const game = new Game();
@@ -8,7 +8,7 @@ const game = new Game();
  */
 const users = new Map();
 
-parentPort?.on('message', (obj)=>{
-    if (obj?.client){
-    }
+// session will recieve:
+    // { client: { [action]: clientData } }
+parentPort?.on( 'message', (json)=>{
 });
