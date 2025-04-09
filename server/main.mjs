@@ -11,11 +11,6 @@ const wss = new WebSocketServer({ port });
 
 class Session {
     /**
-     * @type {Map<string, Session>}
-     */
-    static #IDToSessionMap = new Map(); // sessionID to session, sessionID is to be passed to workers
-
-    /**
      * @param {string} sessionID
      * @param {Worker} worker
      */
@@ -23,6 +18,25 @@ class Session {
         this.worker = worker;
         this.sessionID = sessionID;
         Session.#IDToSessionMap.set(sessionID, this);
+        // send postMessages to the SessionRouter when recieved
+        worker.on("message", SessionRouter.onMessage);
+    }
+
+    getID(){
+        return this.sessionID;
+    }
+
+    /**
+     * @type {Map<string, Session>}
+     */
+    static #IDToSessionMap = new Map(); // sessionID to session, sessionID is to be passed to workers
+
+    /**
+     * @param {string} id
+     */
+    static getSessionByID(id) {
+        if (typeof id !== "string") return null;
+        return this.#IDToSessionMap.get(id);
     }
 
     /**
