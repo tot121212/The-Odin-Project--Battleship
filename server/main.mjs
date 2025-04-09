@@ -125,7 +125,6 @@ class Client {
     };
 }
 
-
 // Route client to session
 class ClientRouter {
     /**
@@ -174,15 +173,24 @@ class ClientRouter {
                             );
 
                         const session = new Session();
-                        session.send(json);
-                        // session should trigger event listener on main for sessionResponses;
+                        json.sessionID = session.getID();
+                        
                     };
                     onClientNewSession(json);
-                    break;
 
-                default:
-                    //onClientMessage(json);
-                    break;
+                const onClientMessage = (json) => {
+                    const sessionID = json?.data?.sessionID;
+                    if (!sessionID)
+                        throw new Error("sessionID not provided");
+                    const session = Session.getSessionByID(sessionID);
+                    if (!session)
+                        throw new Error(
+                            "session at sessionID does not exist"
+                        );
+                    session.send(json);
+                };
+                onClientMessage(json);
+                // session will send response to user
             }
         };
         client.ws.on("message", onMessage);
