@@ -4,11 +4,18 @@ import {Game} from "./battleship.mjs";
 
 const game = new Game();
 /**
- * @type {Map<string, WebSocket>} userId to websocket
+ * @type {Map<string, string>} User to ClientToken Map
  */
-const users = new Map();
+const UserToClientTokenMap = new Map();
 
 // session will recieve:
-    // { client: { [action]: clientData } }
-parentPort?.on( 'message', (json)=>{
+    // { type:CLIENT_ACTION.JOIN_GAME { clientToken, ...data } }
+parentPort?.on('message', (json)=>{
+    // if type:joinGame 
+        // store client token
+        // add as user to game
+        // map user to client
 });
+
+// get client from UserToClientMap
+parentPort?.postMessage({JASON_BOURNE: 0});
