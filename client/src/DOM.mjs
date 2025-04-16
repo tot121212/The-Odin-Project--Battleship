@@ -9,12 +9,11 @@ import { createMessage } from "../../shared/utils.shared.mjs";
 import { Router, UserInfo } from "./index.mjs";
 
 export class DOM {
-    constructor() {
+    static {
         /**
          * @type {Object}
          */
         this.gameData = {};
-
         /**
          * @type {Element|null}
          */
@@ -33,13 +32,12 @@ export class DOM {
     /**
      * @param {Event} e
      */
-    onClick(e) {
+    static onClick(e) {
         if (!e?.target) return;
         if (!(e.target instanceof Element)) return;
 
         if (e.target.classList.contains("new-game")) {
-            if (this.gameData.players.length < 2) return;
-            this.onStartGame(e);
+            this.onNewGame(e);
         } else if (e.target.classList.contains("show-session-list")) {
             this.onShowSessionList(e);
         } else if (e.target.classList.contains("submit-ship-layout")) {
@@ -50,18 +48,14 @@ export class DOM {
         }
     }
 
-    init() {
+    static init() {
         this.content?.addEventListener("click", this.onClick);
     }
 
     /**
      * @param {Event} e
      */
-    onStartGame(e) {
-        const startButton = e.target;
-        // @ts-ignore
-        startButton.classList.add("hidden");
-
+    static onNewGame(e) {
         // send request to server to start game
         Router.socket?.send(
             JSON.stringify(
@@ -70,6 +64,16 @@ export class DOM {
                 })
             )
         );
+        const startButton = e.target;
+        // @ts-ignore
+        startButton.classList.add("hidden");
+    }
+
+    /**
+     * @param {object} message
+     */
+    static responseNewGame(message) {
+        
         this.updateGrids();
         document.querySelector(".grids")?.classList.remove("hidden");
         console.log("DOM: Started game");
@@ -78,7 +82,7 @@ export class DOM {
     /**
      * @param {Event} e
      */
-    onShowSessionList(e) {
+    static onShowSessionList(e) {
         const joinButton = e.target;
         // @ts-ignore
         joinButton.classList.add("hidden");
@@ -87,7 +91,7 @@ export class DOM {
         // wait for session selection
     }
 
-    onSubmitShipLayout(e) {
+    static onSubmitShipLayout(e) {
         /**
          * @type {HTMLDivElement|null}
          */
@@ -102,7 +106,7 @@ export class DOM {
         // wipe grid and replace ships with faces
     }
 
-    onStrikeSquare(e) {
+    static onStrikeSquare(e) {
         const playerID = e.target.closest(".grid").dataset.playerID;
         const squarePos = e.target.dataset.idx;
         const posAsArr = squarePos.split(",").map(Number);
@@ -286,13 +290,14 @@ export class DOM {
     /**
      * Updates the grid based on whether it hasShipParts() or wasShot
      */
-    updateGrids() {
-        for (const gridElement of this.grids) {
+    static updateGrids() {
+        const playerGridMap = this.gameData.playerGridMap;
+        for (const gridElement of this.gameData.grids) {
             // DO NOT DO THIS
             // SEND A REQUEST TO GAME TO GET UPDATED SQUARE INFORMATION AT A PER INDEX BASIS
             // THE GAME SHOULD HANDLE WHAT DATA HAS BEEN CHANGED OR NOT AND
             // SEND YOU ONLY THE SQUARES THAT ACTUALLY NEED TO BE UPDATED
-            const player = this.gameData.uuidPlayerMap.get(
+            const player = playerGridMap.get(
                 gridElement.dataset.playerID
             );
             const grid = this.gameData.playerGridMap.get(player);

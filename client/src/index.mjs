@@ -135,7 +135,6 @@ export class Router {
 let dom;
 document.addEventListener("DOMContentLoaded", (e) => {
     console.log("Page loaded");
-    dom = new DOM();
     Router.connectToWSS();
-    dom.init();
+    DOM.init();
 });
