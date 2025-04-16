@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 
-import LinkedListQueue from "./llq.mjs";
+import LinkedListQueue from "../shared/llq.mjs";
 
 import { Chance } from "chance";
 const chance = new Chance();
 
-import Vector2 from "./vector2.mjs";
+import Vector2 from "../shared/vector2.mjs";
 
 const DIRECTION = {
     HORIZ: {

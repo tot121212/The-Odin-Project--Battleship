@@ -1,4 +1,4 @@
-import Vector2 from "../../server/vector2.mjs";
+import Vector2 from "../../shared/vector2.mjs";
 import Images from "./ImageImporter.mjs";
 
 export class DOM {
