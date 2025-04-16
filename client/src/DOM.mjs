@@ -1,33 +1,90 @@
 import Vector2 from "../../shared/vector2.mjs";
 import Images from "./ImageImporter.mjs";
 
+import { v4 as uuidv4 } from "uuid";
+
+import { CLIENT_ACTION } from "../../shared/enums.shared.mjs";
+import { createMessage } from "../../shared/utils.shared.mjs";
+
+import { Router, UserInfo } from "./index.mjs";
+
 export class DOM {
     constructor() {
         /**
-         * @type {Object|null}
+         * @type {Object}
          */
-        this.gameData = null;
-        /**
-         * @type {Set}
-         */
-        this.grids = new Set();
+        this.gameData = {};
+
         /**
          * @type {Element|null}
          */
         this.content = document.querySelector(".content");
     }
+    // for (const entry of this.gameData.playerGridMap.entries()) {
+    //     const [player, grid] = entry;
+    //     const gridElement = DOM.createGrid(grid, player.getUUID());
+    //     if (!gridElement) throw new Error("Grid was not creatable");
+    //     this.grids.add(gridElement);
+    //     gridContainer.append(gridElement);
+    // }
+    // if (!(gridContainer.children.length > 0))
+    //     throw new Error("Grids container is empty");
 
-    setGameData(gameData) {
-        this.gameData = gameData;
+    /**
+     * @param {Event} e
+     */
+    onClick(e) {
+        if (!e?.target) return;
+        if (!(e.target instanceof Element)) return;
+
+        if (e.target.classList.contains("new-game")) {
+            if (this.gameData.players.length < 2) return;
+            this.onStartGame(e);
+        } else if (e.target.classList.contains("show-session-list")) {
+            this.onShowSessionList(e);
+        } else if (e.target.classList.contains("submit-ship-layout")) {
+            if (!(e.target instanceof HTMLButtonElement)) return;
+            this.onSubmitShipLayout(e);
+        } else if (e.target.classList.contains("square")) {
+            this.onStrikeSquare(e);
+        }
     }
 
+    init() {
+        this.content?.addEventListener("click", this.onClick);
+    }
+
+    /**
+     * @param {Event} e
+     */
     onStartGame(e) {
         const startButton = e.target;
         // @ts-ignore
         startButton.classList.add("hidden");
+
+        // send request to server to start game
+        Router.socket?.send(
+            JSON.stringify(
+                createMessage(uuidv4(), CLIENT_ACTION.START_GAME, {
+                    clientToken: UserInfo.clientToken,
+                })
+            )
+        );
         this.updateGrids();
         document.querySelector(".grids")?.classList.remove("hidden");
         console.log("DOM: Started game");
+    }
+
+    /**
+     * @param {Event} e
+     */
+    onShowSessionList(e) {
+        const joinButton = e.target;
+        // @ts-ignore
+        joinButton.classList.add("hidden");
+        // request session list from server
+        // display session list
+        // wait for session selection
     }
 
     onSubmitShipLayout(e) {
@@ -66,27 +123,6 @@ export class DOM {
         } else {
             return true;
         }
-    }
-
-    loadTemplate() {
-        const newGridsContainer = this.createGridContainer();
-        if (!newGridsContainer)
-            throw new Error("HTML: Grids failed to initialize");
-        this.content?.append(newGridsContainer);
-        this.content?.addEventListener("click", (e) => {
-            if (!e?.target) return;
-            if (!(e.target instanceof Element)) return;
-
-            if (e.target.classList.contains("start-game")) {
-                if (!this.gameData.hasUsers()) return;
-                this.onStartGame(e);
-            } else if (e.target.classList.contains("submit-ship-layout")) {
-                if (!(e.target instanceof HTMLButtonElement)) return;
-                this.onSubmitShipLayout(e);
-            } else if (e.target.classList.contains("square")) {
-                this.onStrikeSquare(e);
-            }
-        });
     }
 
     /**
@@ -139,26 +175,6 @@ export class DOM {
         }
 
         return gridElement;
-    }
-
-    /**
-     * Initializes grids for the gameData passed as an argument, then returns the gridContainer created
-     * @returns {Element}
-     */
-    createGridContainer() {
-        const gridContainer = document.createElement("div");
-        gridContainer.classList.add("grids");
-        for (const entry of this.gameData.playerGridMap.entries()) {
-            const [player, grid] = entry;
-            const gridElement = DOM.createGrid(grid, player.getUUID());
-            if (!gridElement) throw new Error("Grid was not creatable");
-            this.grids.add(gridElement);
-            gridContainer.append(gridElement);
-        }
-        if (!(gridContainer.children.length > 0))
-            throw new Error("Grids container is empty");
-        gridContainer.classList.add("hidden");
-        return gridContainer;
     }
 
     /**

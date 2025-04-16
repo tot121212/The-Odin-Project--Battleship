@@ -194,15 +194,21 @@ export class Square {
          * @type {Vector2|Undefined}
          */
         this.pos = pos;
-        this.wasShot = false;
+        this.isHit = false;
         /**
          * @type {Set<ShipPart>}
          */
         this.shipParts = new Set(); // we can call methods on the parts parent, so very nice
     }
 
+    toJSON(){
+        return {
+            pos: this.pos,
+        }
+    }
+
     reset() {
-        this.wasShot = false;
+        this.isHit = false;
         this.shipParts.clear();
     }
 
@@ -229,8 +235,8 @@ export class Square {
      * @returns {boolean} Returns whether the square was shot already or not
      */
     attack() {
-        if (this.wasShot === true) return false;
-        this.wasShot = true;
+        if (this.isHit === true) return false;
+        this.isHit = true;
         for (const part of this.shipParts) {
             part.hit();
         }
@@ -505,25 +511,22 @@ export class Grid {
 export class User {
     /**
      * @param {string} name
+     * @param {string} id
      */
-    constructor(name, uuid = uuidv4()) {
+    constructor(name, id = uuidv4()) {
         this.name = name;
-        /**
-         * @type {string}
-         */
-        this.uuid = uuid; // users have their own id as well
-    }
-    getUUID() {
-        return this.uuid;
+        this.id = id; // users have their own id as well
     }
 }
 
 export class Bot {
     /**
      * @param {string} name
+     * @param {string} id
      */
-    constructor(name) {
+    constructor(name = "Bot", id = uuidv4()) {
         this.name = name;
+        this.id = id;
     }
 }
 
@@ -532,13 +535,12 @@ export class Player {
     /**
      * @param {User|Bot} parent
      */
-
     constructor(parent) {
         this.parent = parent;
         /**
          * @type {string}
          */
-        this.uuid = uuidv4(); // basically will generate a new unique id for each session of play
+        this.id = parent.id; // basically will generate a new unique id for each session of play
         /**
          * @type {string}
          */
@@ -547,67 +549,47 @@ export class Player {
          * @type {Fleet}
          */
         this.fleet = new Fleet(); // stores roots of ships
-        /**
-         * @type {boolean}
-         */
-        this.ready = false;
-    }
-
-    getUUID() {
-        return this.uuid;
-    }
-
-    isReady() {
-        return this.ready;
-    }
-
-    /**
-     * @param {boolean} bool
-     */
-    setReady(bool) {
-        if (bool) {
-            this.ready = true;
-        } else {
-            this.ready = false;
-        }
     }
 }
 
 export class Game {
-    /**
-     * @param {User[]} initialUsers Main user of game
-     * @param {number} amtOfBots Amount of bot players
-     * @param {number} gridSize Size of grid as a num, x * x
-     * @param {boolean} randomize Should the ship layouts be randomized at start
-     * @param {number} prepPhaseMS
-     * @param {number} playerTurnMS
-     */
-    constructor(
-        initialUsers = [],
-        amtOfBots = 1,
-        gridSize = 10,
-        randomize = true,
-        prepPhaseMS = 20000,
-        playerTurnMS = 10000
-    ) {
-        this.gridSize = gridSize;
-        this.randomize = randomize;
+    constructor(){
+        this.hostUserID = null;
+        this.users = [];
+        /**
+         * @type {Map<string, User>}
+         */
+        this.IDToUser = new Map();
 
-        this.users = [...initialUsers];
-        this.amtOfBots = amtOfBots;
-        this.bots = this.createBots();
+        this.amtOfBots = 1;
+        this.bots = [];
+        /**
+         * @type {Map<string, Bot>}
+         */
+        this.IDToBot = new Map();
 
+        /**
+         * @type {Player[]}
+         */
+        this.players = [];
+        /**
+         * @type {Map<string, Player>};
+         */
+        this.IDToPlayerMap = new Map();
+
+        this.gridSize = 10;
+        this.grids = [];
         /**
          * @type {Map<Player, Grid>}
          */
-        this.playerGridMap = new Map();
-        this.uuidPlayerMap = new Map();
-        this.players = this.createPlayers();
-        this.grids = this.createGrids();
+        this.PlayerToGridMap = new Map();
 
-        this.prepPhaseMS = prepPhaseMS;
-        this.playerTurnMS = playerTurnMS;
+        this.randomize = true;
+
+        this.prepPhaseMS = 20000;
         this.checkPrepPhaseMS = Math.max(this.prepPhaseMS - 1, 1);
+
+        this.playerTurnMS = 10000;
         this.checkPlayerTurnMS = Math.max(this.playerTurnMS - 1, 1);
     }
 
@@ -615,6 +597,7 @@ export class Game {
      * Reset game board after a finished session
      */
     reset() {
+        if (!this.grids || !this.players) return;
         this.grids.forEach((grid) => {
             grid.get().forEach((row) => {
                 row.forEach((sqr) => {
@@ -629,77 +612,150 @@ export class Game {
         });
     }
 
+    setHost(userID){
+        this.hostUserID = userID;
+    }
+
+    getHost(){
+        return this.hostUserID;
+    }
+
+    /**
+     * @param {string} userName 
+     * @param {string|undefined} id
+     * @returns {string} ID
+     */
+    addUser(userName, id = undefined){
+        const user = new User(userName, id);
+        this.users.push(user);
+        this.IDToUser.set(user.id, user);
+        return user.id;
+    }
+
     hasUsers() {
         return this.users.length > 0;
     }
 
     /**
-     * @param {string} uuid
+     * @param {User|Bot} toBePlayer
      * @returns
      */
-    getPlayer(uuid) {
-        return this.uuidPlayerMap.get(uuid);
+    addPlayer(toBePlayer) {
+        if (!toBePlayer || !this.IDToPlayerMap) return;
+        const player = new Player(toBePlayer);
+        this.IDToPlayerMap.set(player.id, player);
+        this.players.push(player);
+    }
+
+    /**
+     * @param {string} id
+     */
+    getPlayer(id) {
+        if (!this.IDToPlayerMap) return;
+        return this.IDToPlayerMap.get(id);
+    }
+
+    /**
+     * UserID and PlayerID are the same, for now
+     * @param {string} userID
+     * @returns {Player|null}
+     */
+    getPlayerByUserID(userID) {
+        if (!userID) return null;
+        const player = this.getPlayer(userID);
+        if (!player) return null;
+        return player;
+    }
+
+    /**
+     * @param {number} amt
+     */
+    setAmtOfBots(amt){
+        this.amtOfBots = amt;
+    }
+
+    /**
+     * @param {string} name 
+     * @param {string|undefined} id 
+     * @returns 
+     */
+    addBot(name, id){
+        const bot = new Bot(name, id);
+        this.bots.push(bot);
+        this.IDToBot.set(bot.id, bot);
+        return bot.id;
+    }
+
+    /**
+     * Sets whether to randomize ship layouts or not
+     * @param {boolean} b
+     */
+    setRandomize(b){
+        if (typeof b !== "boolean") return;
+        this.randomize = b;
+    }
+
+    /**
+     * @param {number} size 
+     */
+    setGridSize(size){
+        if (typeof size !== "number") return;
+        this.gridSize = size;
+    }
+
+    /**
+     * Creates grid and adds to grids array and player grid map
+     * @param {Player} player 
+     * @returns {Grid|null}
+     */
+    createGrid(player){
+        if (!player) return null;
+        const grid = new Grid(this.gridSize);
+        this.grids.push(grid);
+        this.PlayerToGridMap.set(player, grid);
+        return grid;
+    }
+
+    /**
+     * Creates grids for all players
+     */
+    createGrids() {
+        for (const player of this.players){
+            this.createGrid(player);
+        }
     }
 
     /**
      * @param {Player} player
-     * @returns
+     * @returns {Grid|undefined}
      */
     getGrid(player) {
-        return this.playerGridMap.get(player);
+        if (!this.PlayerToGridMap) return;
+        return this.PlayerToGridMap.get(player);
     }
 
     /**
-     * @returns {Bot[]}
+     * @param {string} userID
+     * @returns {Grid|null}
      */
-    createBots() {
-        let bots = [];
-        for (let i = 0; i < this.amtOfBots; i++) {
-            bots.push(new Bot(`Bot ${i + 1}`)); // Create a new Bot instance and add it to the array
-        }
-        return bots;
-    }
-
-    /**
-     * @returns {Player[]}
-     */
-    createPlayers() {
-        //@ts-ignore
-        return this.users.concat(...this.bots).map((p) => {
-            if (!p) return;
-            const player = new Player(p);
-            this.uuidPlayerMap.set(player.getUUID(), player);
-            return player;
-        });
-    }
-
-    /**
-     * Creates grids for each player, mapping them to a hashmap of the player and its grid
-     * @returns {Grid[]}
-     */
-    createGrids() {
-        return this.players.map(
-            /**
-             * @param {Player} player
-             * @returns
-             */
-            (player) => {
-                const grid = new Grid(this.gridSize);
-                this.playerGridMap.set(player, grid);
-                return grid;
-            }
-        );
+    getGridByUserID(userID) {
+        if (!userID) return null;
+        const player = this.getPlayerByUserID(userID);
+        if (!player) return null;
+        const grid = this.getGrid(player);
+        if (!grid) return null;
+        return grid;
     }
 
     /**
      * Prints a visual representation of the grid for each player
      */
     printGrids() {
-        for (const [player, grid] of this.playerGridMap.entries()) {
+        for (const [player, grid] of this.PlayerToGridMap.entries()) {
             console.log(`Grid for ${player.name}:`);
             const visualGrid = grid.get().map((column) =>
                 column.map((square) => {
-                    if (square.wasShot)
+                    if (square.isHit)
                         return square.hasShipParts() ? "X" : "O";
                     if (square.hasShipParts()) {
                         const shipPart = [...square.shipParts][0];
@@ -747,7 +803,7 @@ export class Game {
         for (const player of this.players) {
             this.randomizeShipLayout(player);
         }
-        console.log("Ship layouts randomized for players:", this.playerGridMap);
+        console.log("Ship layouts randomized for players:", this.PlayerToGridMap);
         return true;
     }
 
@@ -821,22 +877,22 @@ export class Game {
     }
 
     /**
-     * Strikes the **pos** on the grid of the **Player** that has the **uuid**
-     * @param {string} uuid
+     * Strikes the **pos** on the grid of the **Player** that has the **id**
+     * @param {string} id
      * @param {Vector2} pos
      * @returns {boolean}
      */
-    attackPlayerAtPos(uuid, pos) {
+    attackPlayerAtPos(id, pos) {
         if (
             !pos ||
-            !uuid ||
+            !id ||
             !(pos instanceof Vector2) ||
             !(typeof pos.x === "number" && typeof pos.y === "number") ||
-            typeof uuid !== "string"
+            typeof id !== "string"
         )
             return false;
 
-        const player = this.getPlayer(uuid);
+        const player = this.getPlayer(id);
         if (!player) throw new Error("Player does not exist");
 
         const grid = this.getGrid(player);
@@ -895,7 +951,7 @@ export class Game {
 
                     const attackPos = null; // get a random attack pos from bot but need to specify a random players grid
                     if (!attackPos) throw new Error("Bot was unable to attack");
-                    this.attackPlayerAtPos(player.getUUID(), attackPos);
+                    this.attackPlayerAtPos(player.id, attackPos);
                 }
             })();
             await playerInput;
@@ -921,12 +977,13 @@ export class Game {
         }
     }
 
-    async start() {
+    async start(userID) {
+        if (userID !== this.hostUserID) return;
         this.isStarted = true;
         console.log("Starting game...");
         //DOM.loadUsers();
         console.log("Players:", this.players);
-        console.log("Grids:", this.playerGridMap);
+        console.log("Grids:", this.PlayerToGridMap);
 
         this.randomizeShipLayouts();
 
